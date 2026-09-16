@@ -186,7 +186,13 @@ class Reunion_Reg_Approval_Workflow {
             'reset_not_confirmed' => array( 'warning', 'Reset cancelled: you must type RESET to confirm.' ),
         );
 
-        if ( ! isset( $map[ $notice ] ) ) {
+        if ( ! isset( $map[ $notice ] ) && 'reset_partial' !== $notice ) {
+            return;
+        }
+
+        if ( 'reset_partial' === $notice ) {
+            $left = isset( $_GET['left'] ) ? absint( $_GET['left'] ) : -1;
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( sprintf( 'Reset incomplete: %d registration rows still remain in the database, and/or the counter row was not cleared. Check Trash and try again.', $left ) ) . '</p></div>';
             return;
         }
 

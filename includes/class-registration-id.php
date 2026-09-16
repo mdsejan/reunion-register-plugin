@@ -5,8 +5,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Static-only utility — generates the next Registration ID in
- * BATCH-NNNN format, using a global sequential counter shared across
- * all batches.
+ * BATCH-NNNN-C format, using a global sequential counter shared across
+ * all batches. The middle NNNN stays sequential (easy to count/sort/read
+ * over the phone); the trailing C is a Luhn check digit so typos fail
+ * fast and the next ID can't be guessed by just adding 1.
+ *
+ * Old BATCH-NNNN IDs (issued before the check digit) keep working: they
+ * are treated as legacy and pass verification as-is.
  *
  * BUG FIX (race condition): the previous implementation did
  *   $next = (int) get_option(...) + 1; update_option(..., $next);
@@ -48,6 +53,37 @@ class Reunion_Reg_ID_Generator {
         $padded = str_pad( $next_number, 4, '0', STR_PAD_LEFT );
         $batch  = sanitize_text_field( $batch );
 
-        return $batch . '-' . $padded;
+        return $batch . '-' . $padded . '-' . self::check_digit( $batch . $padded );
+    }
+
+    public static function verify_registration_id( $reg_id ) {
+        $reg_id = trim( (string) $reg_id );
+
+        if ( preg_match( '/^(.+)-(\d{4})-(\d)$/', $reg_id, $m ) ) {
+            return self::check_digit( $m[1] . $m[2] ) === $m[3];
+        }
+
+        // Legacy IDs from before the check digit existed.
+        return (bool) preg_match( '/^.+-\d{4}$/', $reg_id );
+    }
+
+    private static function check_digit( $input ) {
+        $digits = preg_replace( '/\D/', '', (string) $input );
+        $sum    = 0;
+        $double = false;
+
+        for ( $i = strlen( $digits ) - 1; $i >= 0; $i-- ) {
+            $d = (int) $digits[ $i ];
+            if ( $double ) {
+                $d *= 2;
+                if ( $d > 9 ) {
+                    $d -= 9;
+                }
+            }
+            $sum   += $d;
+            $double = ! $double;
+        }
+
+        return (string) ( ( 10 - ( $sum % 10 ) ) % 10 );
     }
 }
