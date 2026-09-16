@@ -1,0 +1,94 @@
+.reunion-reg-wrapper { max-width: 900px; margin: 0 auto; font-family: inherit; color: #1f2430; }
+.reunion-reg-hp-field { position: absolute !important; left: -9999px !important; top: -9999px !important; height: 0; overflow: hidden; }
+
+.reunion-reg-notice { padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; font-size: 15px; line-height: 1.6; }
+.reunion-reg-success { background: #e6f4ea; color: #1e4620; border: 1px solid #b7dfc0; }
+.reunion-reg-error { background: #fdecea; color: #611a15; border: 1px solid #f5c6c2; }
+
+.reunion-reg-thankyou { background: #fff; border-radius: 20px; padding: 56px 40px; text-align: center; box-shadow: 0 10px 40px rgba(20, 25, 40, 0.08); }
+.reunion-reg-thankyou-icon { width: 64px; height: 64px; line-height: 64px; margin: 0 auto 20px; border-radius: 50%; background: #e6f4ea; color: #1e8a3f; font-size: 32px; font-weight: 800; }
+.reunion-reg-thankyou h2 { margin: 0 0 12px; font-size: 24px; font-weight: 800; color: #1f2430; }
+.reunion-reg-thankyou p { margin: 0; color: #4b5563; font-size: 15px; line-height: 1.8; max-width: 480px; margin: 0 auto; }
+
+.reunion-reg-card { background: #fff; border-radius: 20px; padding: 40px; box-shadow: 0 10px 40px rgba(20, 25, 40, 0.08); box-sizing: border-box; }
+.reunion-reg-heading { text-align: center; margin-bottom: 28px; }
+.reunion-reg-heading h2 { font-size: 28px; font-weight: 800; margin: 0 0 8px; }
+.reunion-reg-heading p { margin: 0; color: #6b7280; font-size: 15px; }
+
+.reunion-section-title { font-size: 16px; font-weight: 700; color: #374151; margin: 32px 0 16px; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; }
+.reunion-reg-form > .reunion-section-title:first-of-type { margin-top: 6px; }
+
+.reunion-section-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px 24px; }
+
+.reunion-field { display: flex; flex-direction: column; min-width: 0; }
+.reunion-field-full { grid-column: 1 / -1; }
+.reunion-field label { margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #374151; }
+.reunion-field .required { color: #d63638; margin-left: 2px; }
+.reunion-field-note { margin: 6px 0 0; font-size: 12px; color: #9ca3af; }
+
+.reunion-field input[type="text"],
+.reunion-field input[type="tel"],
+.reunion-field input[type="email"],
+.reunion-field input[type="number"],
+.reunion-field select {
+    padding: 12px 14px;
+    border: 1px solid #e3e5ea;
+    background: #f7f8fa;
+    border-radius: 10px;
+    font-size: 15px;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    color: #1f2430;
+    transition: border-color .15s ease, background .15s ease;
+}
+.reunion-field input:focus,
+.reunion-field select:focus {
+    outline: none;
+    border-color: #2f6fed;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.12);
+}
+.reunion-field select { appearance: auto; cursor: pointer; }
+
+.reunion-radio-group { display: flex; flex-wrap: wrap; gap: 10px 22px; padding-top: 6px; }
+.reunion-radio-pill { display: inline-flex; align-items: center; gap: 7px; font-size: 15px; cursor: pointer; color: #374151; }
+.reunion-radio-pill input[type="radio"] { width: 17px; height: 17px; accent-color: #2f6fed; cursor: pointer; margin: 0; }
+
+.reunion-total-box {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    background: linear-gradient(135deg, #eef4ff, #e7f0ff);
+    border: 1px solid #d5e3ff;
+    border-radius: 12px;
+    padding: 18px 22px;
+}
+.reunion-total-label { font-weight: 700; font-size: 15px; color: #1f2430; }
+.reunion-total-value { font-size: 26px; font-weight: 800; color: #1a56db; }
+
+.reunion-pay-box { background: #f2f8f3; border: 1px solid #d7ecda; border-radius: 12px; padding: 18px 20px; margin-top: 4px; }
+.reunion-pay-box-bank { background: #f4f6fb; border-color: #dce2f2; }
+.reunion-pay-box p { margin: 0 0 10px; font-size: 14px; line-height: 1.7; color: #374151; }
+.reunion-pay-box p:last-child { margin-bottom: 0; }
+.reunion-pay-box-title { font-weight: 700; font-size: 15px; color: #1f2430; }
+
+.reunion-pay-chips { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
+.reunion-chip { flex: 1 1 160px; text-align: center; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; line-height: 1.6; }
+.reunion-chip-bkash { background: #e2136e; }
+.reunion-chip-nagad { background: #f7941d; }
+.reunion-chip-rocket { background: #8c3494; }
+
+.reunion-reg-submit-btn {
+    display: block; width: 100%; margin-top: 32px;
+    background: #2f6fed; color: #fff; border: none;
+    padding: 16px 24px; border-radius: 12px;
+    font-size: 17px; font-weight: 700; cursor: pointer;
+    transition: background .15s ease;
+}
+.reunion-reg-submit-btn:hover { background: #1a56db; }
+.reunion-reg-terms { margin: 14px 0 0; text-align: center; font-size: 12px; color: #9ca3af; }
+.reunion-reg-terms a { color: #2f6fed; text-decoration: underline; }
+
+@media ( max-width: 480px ) {
+    .reunion-reg-card { padding: 24px 18px; border-radius: 16px; }
+    .reunion-reg-heading h2 { font-size: 22px; }
+}
