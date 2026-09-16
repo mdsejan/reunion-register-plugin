@@ -182,6 +182,8 @@ class Reunion_Reg_Approval_Workflow {
             'already_approved'  => array( 'warning', 'This entry was already approved.' ),
             'already_processed' => array( 'warning', 'This entry has already been processed.' ),
             'saved'             => array( 'success', 'Changes saved successfully.' ),
+            'reset_done'        => array( 'success', 'All registrations deleted. Registration IDs will restart from the beginning.' ),
+            'reset_not_confirmed' => array( 'warning', 'Reset cancelled: you must type RESET to confirm.' ),
         );
 
         if ( ! isset( $map[ $notice ] ) ) {

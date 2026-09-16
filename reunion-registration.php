@@ -66,6 +66,7 @@ require_once REUNION_REG_PLUGIN_DIR . 'includes/class-sms-gateway.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-payment-settings.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-csv-export.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-summary-report.php';
+require_once REUNION_REG_PLUGIN_DIR . 'includes/class-data-reset.php';
 
 /**
  * Bootstraps the plugin: instantiates every module in dependency order.
@@ -114,6 +115,9 @@ final class Reunion_Registration_Plugin {
         // Reporting.
         new Reunion_Reg_CSV_Export();
         new Reunion_Reg_Summary_Report();
+
+        // Maintenance.
+        new Reunion_Reg_Data_Reset();
     }
 }
 
