@@ -180,7 +180,17 @@ class Reunion_Reg_CSV_Export {
                 isset( $statuses_map[ $status_key ] ) ? $statuses_map[ $status_key ] : 'Pending',
             );
             foreach ( $fields as $key => $field ) {
-                $row[] = get_post_meta( $entry->ID, '_reunion_' . $key, true );
+                if ( 'file' === ( $field['type'] ?? '' ) ) {
+                    $url = get_post_meta( $entry->ID, '_reunion_' . $key . '_url', true );
+                    if ( ! $url ) {
+                        $aid = (int) get_post_meta( $entry->ID, '_reunion_' . $key . '_id', true );
+                        if ( $aid ) { $url = wp_get_attachment_url( $aid ) ?: ''; }
+                    }
+                    if ( ! $url ) { $url = get_post_meta( $entry->ID, '_reunion_' . $key, true ); }
+                    $row[] = $url ? esc_url_raw( $url ) : '';
+                } else {
+                    $row[] = get_post_meta( $entry->ID, '_reunion_' . $key, true );
+                }
             }
             $row[] = get_post_meta( $entry->ID, '_reunion_submitted_at', true );
             $row[] = get_post_meta( $entry->ID, '_reunion_approved_at', true );

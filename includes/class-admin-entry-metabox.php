@@ -254,13 +254,19 @@ class Reunion_Reg_Admin_Entry_Metabox {
             echo '</td>';
             echo '</tr>';
         }
+        $receipt_id  = (int) get_post_meta( $post->ID, '_reunion_payment_receipt_id', true );
         $receipt_url = get_post_meta( $post->ID, '_reunion_payment_receipt_url', true );
+        if ( ! $receipt_url && $receipt_id ) { $receipt_url = wp_get_attachment_url( $receipt_id ) ?: ''; }
         if ( $receipt_url ) {
-            echo '<tr><th style="text-align:left;">পেমেন্ট রসিদ</th><td><a href="' . esc_url( $receipt_url ) . '" target="_blank" rel="noopener"><img src="' . esc_url( $receipt_url ) . '" alt="Payment receipt" style="max-width:220px;height:auto;border:1px solid #e5e7eb;border-radius:8px;"></a><br><a href="' . esc_url( $receipt_url ) . '" target="_blank" rel="noopener">Open full size</a></td></tr>';
+            $receipt_view = $receipt_id ? get_edit_post_link( $receipt_id ) : '';
+            echo '<tr><th style="text-align:left;">পেমেন্ট রসিদ</th><td><a href="' . esc_url( $receipt_url ) . '" target="_blank" rel="noopener"><img src="' . esc_url( $receipt_url ) . '" alt="Payment receipt" style="max-width:220px;height:auto;border:1px solid #e5e7eb;border-radius:8px;"></a><br><a href="' . esc_url( $receipt_url ) . '" target="_blank" rel="noopener">Open full size</a>' . ( $receipt_view ? ' · <a href="' . esc_url( $receipt_view ) . '">View in Media Library</a>' : '' ) . '</td></tr>';
         }
+        $photo_id  = (int) get_post_meta( $post->ID, '_reunion_applicant_photo_id', true );
         $photo_url = get_post_meta( $post->ID, '_reunion_applicant_photo_url', true );
+        if ( ! $photo_url && $photo_id ) { $photo_url = wp_get_attachment_url( $photo_id ) ?: ''; }
         if ( $photo_url ) {
-            echo '<tr><th style="text-align:left;">আবেদনকারীর ছবি</th><td><a href="' . esc_url( $photo_url ) . '" target="_blank" rel="noopener"><img src="' . esc_url( $photo_url ) . '" alt="Applicant photo" style="max-width:220px;height:auto;border:1px solid #e5e7eb;border-radius:8px;"></a><br><a href="' . esc_url( $photo_url ) . '" target="_blank" rel="noopener">Open full size</a></td></tr>';
+            $photo_view = $photo_id ? get_edit_post_link( $photo_id ) : '';
+            echo '<tr><th style="text-align:left;">আবেদনকারীর ছবি</th><td><a href="' . esc_url( $photo_url ) . '" target="_blank" rel="noopener"><img src="' . esc_url( $photo_url ) . '" alt="Applicant photo" style="max-width:220px;height:auto;border:1px solid #e5e7eb;border-radius:8px;"></a><br><a href="' . esc_url( $photo_url ) . '" target="_blank" rel="noopener">Open full size</a>' . ( $photo_view ? ' · <a href="' . esc_url( $photo_view ) . '">View in Media Library</a>' : '' ) . '</td></tr>';
         }
         $submitted_at = get_post_meta( $post->ID, '_reunion_submitted_at', true );
         echo '<tr><th style="text-align:left;">Submitted At</th><td>' . esc_html( $submitted_at ) . '</td></tr>';

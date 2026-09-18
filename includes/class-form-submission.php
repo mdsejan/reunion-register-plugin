@@ -101,7 +101,7 @@ class Reunion_Reg_Form_Submission {
 
         $fields = Reunion_Reg_Fields_Schema::get_fields();
         $clean  = array();
-        $file_uploads = array();
+        $pending_file_keys = array();
         $has_missing_required = false;
 
         foreach ( $fields as $key => $field ) {
@@ -163,19 +163,19 @@ class Reunion_Reg_Form_Submission {
 
         foreach ( $fields as $fk => $fv ) {
             if ( ( $fv['type'] ?? '' ) !== 'file' ) { continue; }
-            $uploaded = isset( $_FILES[ $fk ] ) ? $_FILES[ $fk ] : null;
-            $has_upload = is_array( $uploaded ) && isset( $uploaded['error'] ) && 4 !== (int) $uploaded['error'];
             $is_applicable = Reunion_Reg_Fields_Schema::field_is_applicable( $fv, $clean );
             if ( ! $is_applicable ) { continue; }
+            $uploaded = isset( $_FILES[ $fk ] ) ? $_FILES[ $fk ] : null;
+            $has_upload = is_array( $uploaded ) && isset( $uploaded['error'] ) && 4 !== (int) $uploaded['error'];
             $is_required_file = ! empty( $fv['required'] );
             if ( ! $has_upload ) {
                 if ( $is_required_file ) { $has_missing_required = true; }
                 continue;
             }
             if ( 0 !== (int) $uploaded['error'] ) {
-                foreach ( $file_uploads as $prev ) { if ( ! empty( $prev['file'] ) ) { @unlink( $prev['file'] ); } }
                 $this->redirect_with_retry( 'error', array() );
             }
+            $pending_file_keys[] = $fk;
             $max_bytes = 2 * 1024 * 1024;
             $allowed_mimes = array( 'image/jpeg', 'image/png', 'image/webp' );
             $allowed_exts  = array( 'jpg', 'jpeg', 'png', 'webp' );
@@ -197,38 +197,22 @@ class Reunion_Reg_Form_Submission {
                     }
                 }
                 if ( ! $finfo_ok ) {
-                    foreach ( $file_uploads as $prev ) { if ( ! empty( $prev['file'] ) ) { @unlink( $prev['file'] ); } }
                     $this->redirect_with_retry( 'invalid_file', array() );
                 }
             }
             $size = isset( $uploaded['size'] ) ? (int) $uploaded['size'] : 0;
             if ( $size > $max_bytes ) {
-                foreach ( $file_uploads as $prev ) { if ( ! empty( $prev['file'] ) ) { @unlink( $prev['file'] ); } }
                 $this->redirect_with_retry( 'file_too_large', array() );
             }
             if ( ! empty( $uploaded['tmp_name'] ) && is_uploaded_file( $uploaded['tmp_name'] ) ) {
                 $real_size = @filesize( $uploaded['tmp_name'] );
                 if ( $real_size && $real_size > $max_bytes ) {
-                    foreach ( $file_uploads as $prev ) { if ( ! empty( $prev['file'] ) ) { @unlink( $prev['file'] ); } }
                     $this->redirect_with_retry( 'file_too_large', array() );
                 }
             }
-            $overrides = array( 'test_form' => false, 'mimes' => array( 'jpg|jpeg|jpe' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp' ) );
-            $move = wp_handle_upload( $uploaded, $overrides );
-            if ( ! $move || ! empty( $move['error'] ) ) {
-                foreach ( $file_uploads as $prev ) { if ( ! empty( $prev['file'] ) ) { @unlink( $prev['file'] ); } }
-                $this->redirect_with_retry( 'error', array() );
-            }
-            if ( ! empty( $move['file'] ) && @filesize( $move['file'] ) > $max_bytes ) {
-                @unlink( $move['file'] );
-                foreach ( $file_uploads as $prev ) { if ( ! empty( $prev['file'] ) ) { @unlink( $prev['file'] ); } }
-                $this->redirect_with_retry( 'file_too_large', array() );
-            }
-            $file_uploads[ $fk ] = $move;
         }
 
         if ( $has_missing_required ) {
-            foreach ( $file_uploads as $prev ) { if ( ! empty( $prev['file'] ) ) { @unlink( $prev['file'] ); } }
             $this->redirect_with_retry( 'missing_fields', $clean );
         }
 
@@ -271,7 +255,6 @@ class Reunion_Reg_Form_Submission {
         }
 
         if ( $duplicate_field ) {
-            foreach ( $file_uploads as $prev ) { if ( ! empty( $prev['file'] ) ) { @unlink( $prev['file'] ); } }
             $reason = array(
                 'phone'  => 'duplicate_phone',
                 'email'  => 'duplicate_email',
@@ -287,23 +270,68 @@ class Reunion_Reg_Form_Submission {
         ), true );
 
         if ( is_wp_error( $post_id ) || ! $post_id ) {
-            foreach ( $file_uploads as $prev ) { if ( ! empty( $prev['file'] ) ) { @unlink( $prev['file'] ); } }
             $this->redirect_with_retry( 'error', $clean );
         }
 
         foreach ( $clean as $key => $value ) {
             update_post_meta( $post_id, '_reunion_' . $key, $value );
         }
-        if ( ! empty( $file_uploads['payment_receipt']['url'] ) ) {
-            update_post_meta( $post_id, '_reunion_payment_receipt_url', esc_url_raw( $file_uploads['payment_receipt']['url'] ) );
-            update_post_meta( $post_id, '_reunion_payment_receipt_file', sanitize_text_field( $file_uploads['payment_receipt']['file'] ) );
+
+        if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/image.php';
         }
-        if ( ! empty( $file_uploads['applicant_photo']['url'] ) ) {
-            update_post_meta( $post_id, '_reunion_applicant_photo_url', esc_url_raw( $file_uploads['applicant_photo']['url'] ) );
-            update_post_meta( $post_id, '_reunion_applicant_photo_file', sanitize_text_field( $file_uploads['applicant_photo']['file'] ) );
+        if ( ! function_exists( 'wp_handle_upload' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
         }
-        $clean['payment_receipt_url'] = $file_uploads['payment_receipt']['url'] ?? '';
-        $clean['applicant_photo_url'] = $file_uploads['applicant_photo']['url'] ?? '';
+        $media_ids = array();
+        foreach ( $pending_file_keys as $fk ) {
+            $uploaded = $_FILES[ $fk ];
+            $overrides = array( 'test_form' => false, 'mimes' => array( 'jpg|jpeg|jpe' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp' ) );
+            $move = wp_handle_upload( $uploaded, $overrides );
+            if ( ! $move || ! empty( $move['error'] ) ) {
+                foreach ( $media_ids as $mid ) { wp_delete_attachment( $mid, true ); }
+                wp_delete_post( $post_id, true );
+                $msg = $move['error'] ?? '';
+                if ( false !== stripos( $msg, 'larger' ) || false !== stripos( $msg, 'size' ) || false !== stripos( $msg, 'too big' ) ) {
+                    $this->redirect_with_retry( 'file_too_large', array() );
+                }
+                $this->redirect_with_retry( 'invalid_file', array() );
+            }
+            $attachment = array(
+                'post_mime_type' => $move['type'],
+                'post_title'     => sanitize_file_name( pathinfo( $move['file'], PATHINFO_FILENAME ) ),
+                'post_content'   => '',
+                'post_status'    => 'inherit',
+                'guid'           => $move['url'],
+            );
+            $aid = wp_insert_attachment( $attachment, $move['file'], $post_id );
+            if ( is_wp_error( $aid ) || ! $aid ) {
+                if ( ! empty( $move['file'] ) ) { @unlink( $move['file'] ); }
+                foreach ( $media_ids as $mid ) { wp_delete_attachment( $mid, true ); }
+                wp_delete_post( $post_id, true );
+                $this->redirect_with_retry( 'error', array() );
+            }
+            $metadata = wp_generate_attachment_metadata( $aid, $move['file'] );
+            if ( ! empty( $metadata ) ) {
+                wp_update_attachment_metadata( $aid, $metadata );
+            }
+            $url = wp_get_attachment_url( $aid );
+            if ( ! $url ) { $url = $move['url']; }
+            $media_ids[ $fk ] = $aid;
+            if ( 'payment_receipt' === $fk ) {
+                update_post_meta( $post_id, '_reunion_payment_receipt_id', (int) $aid );
+                update_post_meta( $post_id, '_reunion_payment_receipt_url', esc_url_raw( $url ) );
+            } elseif ( 'applicant_photo' === $fk ) {
+                update_post_meta( $post_id, '_reunion_applicant_photo_id', (int) $aid );
+                update_post_meta( $post_id, '_reunion_applicant_photo_url', esc_url_raw( $url ) );
+            }
+        }
+        $clean['payment_receipt_url']  = ! empty( $media_ids['payment_receipt'] ) ? wp_get_attachment_url( $media_ids['payment_receipt'] ) : '';
+        if ( ! $clean['payment_receipt_url'] && isset( $media_ids['payment_receipt'] ) ) { $clean['payment_receipt_url'] = get_post_meta( $post_id, '_reunion_payment_receipt_url', true ); }
+        $clean['payment_receipt_id']   = $media_ids['payment_receipt'] ?? 0;
+        $clean['applicant_photo_url']  = ! empty( $media_ids['applicant_photo'] ) ? wp_get_attachment_url( $media_ids['applicant_photo'] ) : '';
+        if ( ! $clean['applicant_photo_url'] && isset( $media_ids['applicant_photo'] ) ) { $clean['applicant_photo_url'] = get_post_meta( $post_id, '_reunion_applicant_photo_url', true ); }
+        $clean['applicant_photo_id']   = $media_ids['applicant_photo'] ?? 0;
 
         update_post_meta( $post_id, '_reunion_submitted_at', current_time( 'mysql' ) );
         update_post_meta( $post_id, '_reunion_submitted_ip', sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? '' ) );
