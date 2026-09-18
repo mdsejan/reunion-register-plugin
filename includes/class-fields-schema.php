@@ -156,7 +156,7 @@ class Reunion_Reg_Fields_Schema {
             'applicant_photo'        => array(
                 'section' => 5, 'label' => 'আপনার ছবি আপলোড করুন', 'type' => 'file', 'required' => true,
                 'accept'  => 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp',
-                'note'    => 'JPG, PNG বা WebP — সর্বোচ্চ ২ MB (৫-১০ MB বড় ছবি স্বয়ংক্রিয়ভাবে ১২০০px ও ~৮২% কোয়ালিটিতে কম্প্রেস হয়ে ২ MB-এর নিচে নেমে আসবে)',
+                'note'    => 'JPG, PNG বা WebP (বড় ছবি স্বয়ংক্রিয়ভাবে অপ্টিমাইজ হবে)',
             ),
         );
     }
