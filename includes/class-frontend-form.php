@@ -389,12 +389,6 @@ class Reunion_Reg_Frontend_Form {
                     array( 'label' => 'অ্যাকাউন্ট নম্বর', 'value' => '125 43287 98341' ),
                     array( 'label' => 'ব্রাঞ্চ', 'value' => 'বগুড়া শাখা, বগুড়া।' ),
                 );
-                if ( ! empty( $settings['bank_details'] ) ) {
-                    $custom = trim( (string) $settings['bank_details'] );
-                    if ( '' !== $custom ) {
-                        echo '<p>' . nl2br( esc_html( $custom ) ) . '</p>';
-                    }
-                }
                 ?>
                 <div class="reunion-bank-details">
                     <?php foreach ( $bank_pairs as $pair ) : ?>
