@@ -254,6 +254,10 @@ class Reunion_Reg_Admin_Entry_Metabox {
             echo '</td>';
             echo '</tr>';
         }
+        $receipt_url = get_post_meta( $post->ID, '_reunion_payment_receipt_url', true );
+        if ( $receipt_url ) {
+            echo '<tr><th style="text-align:left;">পেমেন্ট রসিদ</th><td><a href="' . esc_url( $receipt_url ) . '" target="_blank" rel="noopener"><img src="' . esc_url( $receipt_url ) . '" alt="Payment receipt" style="max-width:220px;height:auto;border:1px solid #e5e7eb;border-radius:8px;"></a><br><a href="' . esc_url( $receipt_url ) . '" target="_blank" rel="noopener">Open full size</a></td></tr>';
+        }
         $photo_url = get_post_meta( $post->ID, '_reunion_applicant_photo_url', true );
         if ( $photo_url ) {
             echo '<tr><th style="text-align:left;">আবেদনকারীর ছবি</th><td><a href="' . esc_url( $photo_url ) . '" target="_blank" rel="noopener"><img src="' . esc_url( $photo_url ) . '" alt="Applicant photo" style="max-width:220px;height:auto;border:1px solid #e5e7eb;border-radius:8px;"></a><br><a href="' . esc_url( $photo_url ) . '" target="_blank" rel="noopener">Open full size</a></td></tr>';

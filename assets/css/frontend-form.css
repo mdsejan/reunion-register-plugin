@@ -71,6 +71,12 @@
 .reunion-pay-box p { margin: 0 0 10px; font-size: 14px; line-height: 1.7; color: #374151; }
 .reunion-pay-box p:last-child { margin-bottom: 0; }
 .reunion-pay-box-title { font-weight: 700; font-size: 15px; color: #1f2430; }
+.reunion-bank-details { display: grid; gap: 8px; margin: 12px 0 10px; padding: 12px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; }
+.reunion-bank-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: start; font-size: 14px; line-height: 1.5; }
+.reunion-bank-label { font-weight: 600; color: #374151; }
+.reunion-bank-value { color: #1f2430; word-break: break-word; }
+.reunion-bank-hint { font-size: 12px !important; color: #6b7280 !important; margin: 8px 0 0 !important; }
+@media (max-width: 520px) { .reunion-bank-row { grid-template-columns: 1fr; } }
 
 .reunion-pay-chips { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
 .reunion-chip { flex: 1 1 160px; text-align: center; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; line-height: 1.6; }
@@ -108,8 +114,10 @@
 .reunion-file-btn { display: inline-flex; align-items: center; justify-content: center; padding: 9px 16px; border-radius: 8px; background: #7a2b2b; color: #FFFFFF; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background .15s, transform .08s; user-select: none; }
 .reunion-file-btn:hover { background: #5f1f1f; }
 .reunion-file-btn:active { transform: scale(0.98); }
-.reunion-field-applicant_photo > label { color: #1f2430; }
-.reunion-field-applicant_photo .reunion-field-note { color: #4b5563; }
+.reunion-field-applicant_photo > label,
+.reunion-field-payment_receipt > label { color: #1f2430; }
+.reunion-field-applicant_photo .reunion-field-note,
+.reunion-field-payment_receipt .reunion-field-note { color: #4b5563; }
 .reunion-file-meta { flex: 1; min-width: 0; font-size: 13px; color: #4b5563; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .reunion-file-meta.is-chosen { color: #1f2430; font-weight: 600; }
 .reunion-file-meta.is-error { color: #b42318; }

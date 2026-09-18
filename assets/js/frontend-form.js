@@ -1,8 +1,8 @@
 /**
  * Public registration form behaviour: toggles conditional fields (payment
  * method sub-fields), live-recalculates the displayed total, and — for the
- * applicant photo / receipt upload — client-side compresses/resizes large
- * smartphone photos before submission while validating format and size.
+ * applicant photo + bank receipt uploads — client-side compresses/resizes
+ * large smartphone photos before submission while validating format and size.
  *
  * Reads fee configuration from the ReunionRegConfig object, which PHP
  * injects via wp_localize_script() (see class-frontend-form.php).
@@ -24,7 +24,7 @@
     var UPLOAD_QUALITY = 0.82;
     var UPLOAD_ALLOWED_TYPES = { 'image/jpeg': 1, 'image/png': 1, 'image/webp': 1 };
     var UPLOAD_ALLOWED_LABEL = 'JPG, PNG, WebP';
-    var UPLOAD_INPUT_ID = 'reunion_applicant_photo';
+    var UPLOAD_INPUT_IDS = ['reunion_applicant_photo', 'reunion_payment_receipt'];
 
     function escText(s) { return String(s == null ? '' : s); }
 
@@ -211,12 +211,18 @@
         return blob;
     }
 
-    function wireUploadCompression() {
-        var input = document.getElementById(UPLOAD_INPUT_ID);
-        if (!input) return;
+    function wireOneUpload(input) {
         var form = input.closest('form');
         var submitBtn = form ? form.querySelector('[type="submit"]') : null;
         var pendingPromise = null;
+        var isReceipt = input.id === 'reunion_payment_receipt';
+
+        function isVisible() {
+            var wrapper = input.closest('.reunion-conditional');
+            if (!wrapper) return true;
+            if (wrapper.style.display === 'none') return false;
+            return wrapper.offsetParent !== null || getComputedStyle(wrapper).display !== 'none';
+        }
 
         function setBusy(busy, text) {
             if (submitBtn) submitBtn.disabled = !!busy;
@@ -289,8 +295,9 @@
 
         if (form) {
             form.addEventListener('submit', function (e) {
+                if (isReceipt && !isVisible()) return;
                 var f = input.files && input.files[0] ? input.files[0] : null;
-                if (input.hasAttribute('required') && !f) return;
+                if (input.hasAttribute('required') && isVisible() && !f) return;
                 if (!f) return;
                 if (!isAllowedImageFile(f)) {
                     e.preventDefault();
@@ -316,6 +323,50 @@
                 }
             });
         }
+
+        input._reunionPending = function () { return pendingPromise; };
+        return input;
+    }
+
+    function wireUploadCompression() {
+        var wired = [];
+        UPLOAD_INPUT_IDS.forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) wired.push(wireOneUpload(el));
+        });
+        if (!wired.length) return;
+        var form = wired[0].closest('form');
+        if (!form || form._reunionUploadWired) return;
+        form._reunionUploadWired = true;
+        form.addEventListener('submit', function (e) {
+            var pending = null;
+            wired.forEach(function (inp) {
+                var p = inp._reunionPending && inp._reunionPending();
+                if (p) pending = p;
+            });
+            if (!pending) return;
+            var submitBtn = form.querySelector('[type="submit"]');
+            e.preventDefault();
+            wired.forEach(function (inp) {
+                if (inp._reunionPending && inp._reunionPending()) {
+                    inp.setAttribute('aria-busy', 'true');
+                    setFieldStatus(inp, 'Optimizing image...', true);
+                    if (submitBtn) submitBtn.disabled = true;
+                }
+            });
+            pending.then(function () {
+                var hasError = wired.some(function (inp) { return inp.getAttribute('aria-invalid') === 'true'; });
+                if (hasError) {
+                    if (submitBtn) submitBtn.disabled = false;
+                    wired.forEach(function (inp) { inp.removeAttribute('aria-busy'); });
+                    return;
+                }
+                wired.forEach(function (inp) { inp.removeAttribute('aria-busy'); });
+                if (submitBtn) submitBtn.disabled = false;
+                if (typeof form.requestSubmit === 'function') form.requestSubmit(submitBtn || undefined);
+                else form.submit();
+            });
+        });
     }
 
     document.addEventListener('click', function (e) {

@@ -152,7 +152,14 @@ class Reunion_Reg_Fields_Schema {
                 'placeholder' => 'যেমন: BKA3X7R9Z2',
             ),
 
-            // ---------- ৫. আবেদনকারীর ছবি / পেমেন্ট রসিদ ----------
+            'payment_receipt'        => array(
+                'section' => 4, 'label' => 'পেমেন্ট রসিদ / স্ক্রিনশট', 'type' => 'file', 'required' => true,
+                'accept'  => 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp',
+                'note'    => 'JPG, PNG বা WebP (বড় ছবি স্বয়ংক্রিয়ভাবে অপ্টিমাইজ হবে)',
+                'depends_on' => array( 'field' => 'payment_channel', 'value' => 'ব্যাংক একাউন্ট' ),
+            ),
+
+            // ---------- ৫. আবেদনকারীর ছবি ----------
             'applicant_photo'        => array(
                 'section' => 5, 'label' => 'আপনার ছবি আপলোড করুন', 'type' => 'file', 'required' => true,
                 'accept'  => 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp',

@@ -61,8 +61,8 @@ class Reunion_Reg_Frontend_Form {
             'duplicate_tnx'   => array( 'error', 'এই ট্রানজেকশন আইডি ইতিমধ্যে জমা দেওয়া হয়েছে। অনুগ্রহ করে আবার যাচাই করুন, অথবা ভুল মনে হলে আমাদের সাথে যোগাযোগ করুন।' ),
             'rate_limited'    => array( 'error', 'অল্প সময়ের মধ্যে অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন।' ),
             'missing_fields'  => array( 'error', 'অনুগ্রহ করে সব আবশ্যক (*) ফিল্ড সঠিকভাবে পূরণ করে আবার চেষ্টা করুন।' ),
-            'invalid_file'    => array( 'error', 'ছবির ফরম্যাট সঠিক নয়। অনুগ্রহ করে JPG, PNG বা WebP ফাইল আপলোড করুন।' ),
-            'file_too_large'  => array( 'error', 'ছবিটি অনেক বড়। সর্বোচ্চ ২ MB পর্যন্ত অনুমোদিত। অনুগ্রহ করে ছোট/কম্প্রেস করা ছবি ব্যবহার করুন।' ),
+            'invalid_file'    => array( 'error', 'ছবি/রসিদের ফরম্যাট সঠিক নয়। অনুগ্রহ করে JPG, PNG বা WebP ফাইল আপলোড করুন।' ),
+            'file_too_large'  => array( 'error', 'ছবি/রসিদ অনেক বড়। সর্বোচ্চ ২ MB পর্যন্ত অনুমোদিত। অনুগ্রহ করে ছোট/কম্প্রেস করা ছবি ব্যবহার করুন।' ),
             'error'           => array( 'error', 'দুঃখিত, কিছু একটা সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।' ),
         );
 
@@ -80,7 +80,7 @@ class Reunion_Reg_Frontend_Form {
 
         // Fields that should span the full width of the responsive grid
         // instead of sharing a row with a neighbouring field.
-        $full_width_fields = array( 'permanent_address', 'present_address', 'profession', 'gift_dress', 'total_amount', 'payment_channel', 'applicant_photo' );
+        $full_width_fields = array( 'permanent_address', 'present_address', 'profession', 'gift_dress', 'total_amount', 'payment_channel', 'payment_receipt', 'applicant_photo' );
 
         ob_start();
         ?>
@@ -382,12 +382,29 @@ class Reunion_Reg_Frontend_Form {
         <div class="reunion-field-full reunion-conditional reunion-pay-instructions" data-depends-field="payment_channel" data-depends-value="ব্যাংক একাউন্ট" <?php echo $bank_visible ? '' : 'style="display:none;"'; ?>>
             <div class="reunion-pay-box reunion-pay-box-bank">
                 <p class="reunion-pay-box-title">🏦 ব্যাংক ট্রান্সফার নিয়মাবলী:</p>
-                <?php if ( ! empty( $settings['bank_details'] ) ) : ?>
-                    <p><?php echo nl2br( esc_html( $settings['bank_details'] ) ); ?></p>
-                <?php else : ?>
-                    <p>ব্যাংক একাউন্টের বিস্তারিত তথ্য শীঘ্রই যোগ করা হবে। এখন অনুগ্রহ করে "মোবাইল ব্যাংকিং" ব্যবহার করুন অথবা সরাসরি যোগাযোগ করুন।</p>
-                <?php endif; ?>
-                <p>টাকা পাঠানোর পর ব্যাংকের নাম ও ট্রানজেকশন/রেফারেন্স নম্বর নিচে দিন।</p>
+                <?php
+                $bank_pairs = array(
+                    array( 'label' => 'ব্যাংকের নাম', 'value' => 'ডাচ-বাংলা ব্যাংক পিএলসি' ),
+                    array( 'label' => 'অ্যাকাউন্ট নাম', 'value' => 'BKMHS Reunion & Alumni Associations' ),
+                    array( 'label' => 'অ্যাকাউন্ট নম্বর', 'value' => '125 43287 98341' ),
+                    array( 'label' => 'ব্রাঞ্চ', 'value' => 'বগুড়া শাখা, বগুড়া।' ),
+                );
+                if ( ! empty( $settings['bank_details'] ) ) {
+                    $custom = trim( (string) $settings['bank_details'] );
+                    if ( '' !== $custom ) {
+                        echo '<p>' . nl2br( esc_html( $custom ) ) . '</p>';
+                    }
+                }
+                ?>
+                <div class="reunion-bank-details">
+                    <?php foreach ( $bank_pairs as $pair ) : ?>
+                        <div class="reunion-bank-row">
+                            <span class="reunion-bank-label"><?php echo esc_html( $pair['label'] ); ?></span>
+                            <span class="reunion-bank-value"><?php echo esc_html( $pair['value'] ); ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <p class="reunion-bank-hint">টাকা পাঠানোর পর ব্যাংকের নাম ও ট্রানজেকশন/রেফারেন্স নম্বর নিচে দিন।</p>
             </div>
         </div>
         <?php
