@@ -37,9 +37,12 @@ class Reunion_Reg_Payment_Settings {
         return array(
             'registration_fee' => isset( $input['registration_fee'] ) ? max( 0, (float) $input['registration_fee'] ) : 0,
             'guest_fee'        => isset( $input['guest_fee'] ) ? max( 0, (float) $input['guest_fee'] ) : 0,
-            'bkash_number'     => isset( $input['bkash_number'] ) ? sanitize_text_field( trim( $input['bkash_number'] ) ) : '',
-            'nagad_number'     => isset( $input['nagad_number'] ) ? sanitize_text_field( trim( $input['nagad_number'] ) ) : '',
-            'rocket_number'    => isset( $input['rocket_number'] ) ? sanitize_text_field( trim( $input['rocket_number'] ) ) : '',
+            'person1_name'     => isset( $input['person1_name'] ) ? sanitize_text_field( trim( $input['person1_name'] ) ) : '',
+            'person1_number'   => isset( $input['person1_number'] ) ? sanitize_text_field( trim( $input['person1_number'] ) ) : '',
+            'person2_name'     => isset( $input['person2_name'] ) ? sanitize_text_field( trim( $input['person2_name'] ) ) : '',
+            'person2_number'   => isset( $input['person2_number'] ) ? sanitize_text_field( trim( $input['person2_number'] ) ) : '',
+            'person3_name'     => isset( $input['person3_name'] ) ? sanitize_text_field( trim( $input['person3_name'] ) ) : '',
+            'person3_number'   => isset( $input['person3_number'] ) ? sanitize_text_field( trim( $input['person3_number'] ) ) : '',
             'bank_details'     => isset( $input['bank_details'] ) ? sanitize_textarea_field( $input['bank_details'] ) : '',
             'terms_url'        => isset( $input['terms_url'] ) ? esc_url_raw( trim( $input['terms_url'] ) ) : '',
         );
@@ -65,16 +68,31 @@ class Reunion_Reg_Payment_Settings {
                         <td><input type="number" step="1" min="0" id="guest_fee" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[guest_fee]" value="<?php echo esc_attr( $settings['guest_fee'] ); ?>" class="regular-text"></td>
                     </tr>
                     <tr>
-                        <th><label for="bkash_number">bKash Personal Number</label></th>
-                        <td><input type="text" id="bkash_number" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[bkash_number]" value="<?php echo esc_attr( $settings['bkash_number'] ); ?>" class="regular-text" placeholder="01XXXXXXXXX"></td>
+                        <th colspan="2"><h3 style="margin: 1.2em 0 0.2em;">Mobile Banking — 3 Persons</h3><p class="description" style="margin:0;">Each number supports bKash / Nagad / Rocket (Personal). Shown on the frontend as a single compact row with gateway badges and one copy button per person.</p></th>
                     </tr>
                     <tr>
-                        <th><label for="nagad_number">Nagad Personal Number</label></th>
-                        <td><input type="text" id="nagad_number" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[nagad_number]" value="<?php echo esc_attr( $settings['nagad_number'] ); ?>" class="regular-text" placeholder="01XXXXXXXXX"></td>
+                        <th><label for="person1_name">Person 1 — Name / Label</label></th>
+                        <td><input type="text" id="person1_name" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person1_name]" value="<?php echo esc_attr( $settings['person1_name'] ); ?>" class="regular-text" placeholder="Person 1"></td>
                     </tr>
                     <tr>
-                        <th><label for="rocket_number">Rocket Personal Number</label></th>
-                        <td><input type="text" id="rocket_number" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[rocket_number]" value="<?php echo esc_attr( $settings['rocket_number'] ); ?>" class="regular-text" placeholder="01XXXXXXXXX"></td>
+                        <th><label for="person1_number">Person 1 — Mobile Number</label></th>
+                        <td><input type="text" id="person1_number" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person1_number]" value="<?php echo esc_attr( $settings['person1_number'] ); ?>" class="regular-text" placeholder="01XXXXXXXXX"></td>
+                    </tr>
+                    <tr>
+                        <th><label for="person2_name">Person 2 — Name / Label</label></th>
+                        <td><input type="text" id="person2_name" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person2_name]" value="<?php echo esc_attr( $settings['person2_name'] ); ?>" class="regular-text" placeholder="Person 2"></td>
+                    </tr>
+                    <tr>
+                        <th><label for="person2_number">Person 2 — Mobile Number</label></th>
+                        <td><input type="text" id="person2_number" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person2_number]" value="<?php echo esc_attr( $settings['person2_number'] ); ?>" class="regular-text" placeholder="01XXXXXXXXX"></td>
+                    </tr>
+                    <tr>
+                        <th><label for="person3_name">Person 3 — Name / Label</label></th>
+                        <td><input type="text" id="person3_name" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person3_name]" value="<?php echo esc_attr( $settings['person3_name'] ); ?>" class="regular-text" placeholder="Person 3"></td>
+                    </tr>
+                    <tr>
+                        <th><label for="person3_number">Person 3 — Mobile Number</label></th>
+                        <td><input type="text" id="person3_number" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person3_number]" value="<?php echo esc_attr( $settings['person3_number'] ); ?>" class="regular-text" placeholder="01XXXXXXXXX"></td>
                     </tr>
                     <tr>
                         <th><label for="bank_details">Bank Transfer Details</label></th>

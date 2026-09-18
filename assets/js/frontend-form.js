@@ -48,6 +48,51 @@
         out.textContent = total.toLocaleString( 'en-US' );
     }
 
+    function fallbackCopy(text, done) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        done();
+    }
+
+    function copyText(text, btn) {
+        var done = function () {
+            if (!btn) return;
+            btn.classList.add('is-copied');
+            clearTimeout(btn._reunionCopyTimer);
+            btn._reunionCopyTimer = setTimeout(function () {
+                btn.classList.remove('is-copied');
+            }, 2000);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text, done); });
+        } else {
+            fallbackCopy(text, done);
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        var target = e.target.closest('[data-copy-value]');
+        if (!target || !target.closest('.reunion-pay-box')) return;
+        var val = target.getAttribute('data-copy-value');
+        if (!val) return;
+        var btn;
+        if (target.classList.contains('reunion-copy-btn')) {
+            btn = target;
+        } else {
+            var person = target.closest('.reunion-pay-method');
+            btn = person ? person.querySelector('.reunion-copy-btn') : null;
+            if (!btn) btn = target;
+        }
+        copyText(val, btn);
+    });
+
     document.addEventListener( 'DOMContentLoaded', function () {
         syncConditionalFields();
         calcTotal();

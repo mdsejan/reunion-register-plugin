@@ -306,16 +306,43 @@ class Reunion_Reg_Frontend_Form {
         $mobile_visible = ( 'মোবাইল ব্যাংকিং' === $current_channel || empty( $current_channel ) );
         $bank_visible   = ( 'ব্যাংক একাউন্ট' === $current_channel );
 
+        $mobile_accounts = array(
+            array( 'name' => $settings['person1_name'] ?: 'Person 1', 'number' => $settings['person1_number'] ),
+            array( 'name' => $settings['person2_name'] ?: 'Person 2', 'number' => $settings['person2_number'] ),
+            array( 'name' => $settings['person3_name'] ?: 'Person 3', 'number' => $settings['person3_number'] ),
+        );
+
         ob_start();
         ?>
         <div class="reunion-field-full reunion-conditional reunion-pay-instructions" data-depends-field="payment_channel" data-depends-value="মোবাইল ব্যাংকিং" <?php echo $mobile_visible ? '' : 'style="display:none;"'; ?>>
             <div class="reunion-pay-box">
                 <p class="reunion-pay-box-title">📱 মোবাইল ব্যাংকিং নিয়মাবলী:</p>
                 <p>১. আপনার হিসাবকৃত সর্বমোট টাকা নিচের যেকোনো একটি নম্বরে <strong>Send Money</strong> করুন:</p>
-                <div class="reunion-pay-chips">
-                    <span class="reunion-chip reunion-chip-bkash">বিকাশ (Personal)<br><?php echo esc_html( $settings['bkash_number'] ? $settings['bkash_number'] : 'নম্বর শীঘ্রই যোগ হবে' ); ?></span>
-                    <span class="reunion-chip reunion-chip-nagad">নগদ (Personal)<br><?php echo esc_html( $settings['nagad_number'] ? $settings['nagad_number'] : 'নম্বর শীঘ্রই যোগ হবে' ); ?></span>
-                    <span class="reunion-chip reunion-chip-rocket">রকেট (Personal)<br><?php echo esc_html( $settings['rocket_number'] ? $settings['rocket_number'] : 'নম্বর শীঘ্রই যোগ হবে' ); ?></span>
+                <div class="reunion-pay-persons">
+                    <?php foreach ( $mobile_accounts as $person ) : $has_number = ! empty( $person['number'] ); ?>
+                        <div class="reunion-pay-person">
+                            <p class="reunion-pay-person-name"><?php echo esc_html( $person['name'] ); ?></p>
+                            <div class="reunion-pay-method reunion-pay-method-single">
+                                <span class="reunion-pay-badges" aria-hidden="true">
+                                    <span class="reunion-pay-method-label reunion-chip-bkash">bKash</span>
+                                    <span class="reunion-pay-method-label reunion-chip-nagad">Nagad</span>
+                                    <span class="reunion-pay-method-label reunion-chip-rocket">Rocket</span>
+                                </span>
+                                <?php if ( $has_number ) : ?>
+                                    <span class="reunion-pay-number" data-copy-value="<?php echo esc_attr( $person['number'] ); ?>" title="Click to copy"><?php echo esc_html( $person['number'] ); ?></span>
+                                    <button type="button" class="reunion-copy-btn" data-copy-value="<?php echo esc_attr( $person['number'] ); ?>" aria-label="Copy number for <?php echo esc_attr( $person['name'] ); ?>">
+                                        <span class="reunion-copy-icon reunion-copy-icon-copy" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v3"></path></svg></span>
+                                        <span class="reunion-copy-icon reunion-copy-icon-check" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                                        <span class="reunion-copy-tooltip" role="status">Copied!</span>
+                                    </button>
+                                <?php else : ?>
+                                    <span class="reunion-pay-number reunion-pay-number-empty">নম্বর শীঘ্রই যোগ হবে</span>
+                                    <button type="button" class="reunion-copy-btn" disabled aria-label="Number not available"><span class="reunion-copy-icon reunion-copy-icon-copy" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2-2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v3"></path></svg></span></button>
+                                <?php endif; ?>
+                            </div>
+                            <span class="reunion-pay-personal-note">bKash / Nagad / Rocket (Personal)</span>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
                 <p>২. সফলভাবে টাকা পাঠানোর পর ট্রানজেকশন আইডি (TxID) সংগ্রহ করুন এবং নিচের ফিল্ডগুলো পূরণ করুন।</p>
             </div>

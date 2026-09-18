@@ -166,14 +166,32 @@ class Reunion_Reg_Fields_Schema {
         $defaults = array(
             'registration_fee' => 1000,
             'guest_fee'        => 500,
-            'bkash_number'     => '',
-            'nagad_number'     => '',
-            'rocket_number'    => '',
+            'person1_name'     => 'Person 1',
+            'person1_number'   => '',
+            'person2_name'     => 'Person 2',
+            'person2_number'   => '',
+            'person3_name'     => 'Person 3',
+            'person3_number'   => '',
             'bank_details'     => '',
             'terms_url'        => '',
         );
 
-        return wp_parse_args( get_option( REUNION_REG_PAYMENT_SETTINGS_OPTION, array() ), $defaults );
+        $settings = wp_parse_args( get_option( REUNION_REG_PAYMENT_SETTINGS_OPTION, array() ), $defaults );
+
+        if ( empty( $settings['person1_number'] ) && empty( $settings['person2_number'] ) && empty( $settings['person3_number'] ) ) {
+            $legacy = get_option( REUNION_REG_PAYMENT_SETTINGS_OPTION, array() );
+            if ( ! empty( $legacy['bkash_number'] ) && empty( $settings['person1_number'] ) ) {
+                $settings['person1_number'] = $legacy['bkash_number'];
+            }
+            if ( ! empty( $legacy['nagad_number'] ) && empty( $settings['person2_number'] ) ) {
+                $settings['person2_number'] = $legacy['nagad_number'];
+            }
+            if ( ! empty( $legacy['rocket_number'] ) && empty( $settings['person3_number'] ) ) {
+                $settings['person3_number'] = $legacy['rocket_number'];
+            }
+        }
+
+        return $settings;
     }
 
     /**
