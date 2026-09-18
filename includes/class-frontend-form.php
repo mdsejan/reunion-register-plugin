@@ -98,10 +98,9 @@ class Reunion_Reg_Frontend_Form {
 
             <?php if ( ! $success ) : ?>
             <div class="reunion-reg-card">
-                <div class="reunion-reg-heading">
+                <!-- <div class="reunion-reg-heading">
                     <h2>রেজিস্ট্রেশন ফরম</h2>
-                    <p>নিচের তথ্যগুলো সঠিকভাবে পূরণ করে আপনার আসনটি নিশ্চিত করুন।</p>
-                </div>
+                </div> -->
 
                 <form class="reunion-reg-form" method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                     <input type="hidden" name="action" value="reunion_reg_submit">
@@ -296,6 +295,17 @@ class Reunion_Reg_Frontend_Form {
         return ob_get_clean();
     }
 
+    private function format_phone_display( $number ) {
+        $digits = preg_replace( '/\D/', '', (string) $number );
+        if ( 11 === strlen( $digits ) ) {
+            return substr( $digits, 0, 5 ) . ' ' . substr( $digits, 5, 3 ) . ' ' . substr( $digits, 8, 3 );
+        }
+        if ( strlen( $digits ) > 6 ) {
+            return trim( chunk_split( $digits, 3, ' ' ) );
+        }
+        return $digits ? $digits : (string) $number;
+    }
+
     /**
      * Renders the two toggleable payment-instruction boxes (mobile banking / bank
      * account), shown just after the "পেমেন্ট মাধ্যম" choice. Numbers/details come
@@ -322,22 +332,26 @@ class Reunion_Reg_Frontend_Form {
                     <?php foreach ( $mobile_accounts as $person ) : $has_number = ! empty( $person['number'] ); ?>
                         <div class="reunion-pay-person">
                             <p class="reunion-pay-person-name"><?php echo esc_html( $person['name'] ); ?></p>
-                            <div class="reunion-pay-method reunion-pay-method-single">
-                                <span class="reunion-pay-badges" aria-hidden="true">
+                            <div class="reunion-pay-method reunion-pay-method-stacked">
+                                <div class="reunion-pay-badges" aria-hidden="true">
                                     <span class="reunion-pay-method-label reunion-chip-bkash">bKash</span>
                                     <span class="reunion-pay-method-label reunion-chip-nagad">Nagad</span>
                                     <span class="reunion-pay-method-label reunion-chip-rocket">Rocket</span>
-                                </span>
+                                </div>
                                 <?php if ( $has_number ) : ?>
-                                    <span class="reunion-pay-number" data-copy-value="<?php echo esc_attr( $person['number'] ); ?>" title="Click to copy"><?php echo esc_html( $person['number'] ); ?></span>
-                                    <button type="button" class="reunion-copy-btn" data-copy-value="<?php echo esc_attr( $person['number'] ); ?>" aria-label="Copy number for <?php echo esc_attr( $person['name'] ); ?>">
-                                        <span class="reunion-copy-icon reunion-copy-icon-copy" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v3"></path></svg></span>
-                                        <span class="reunion-copy-icon reunion-copy-icon-check" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-                                        <span class="reunion-copy-tooltip" role="status">Copied!</span>
-                                    </button>
+                                    <div class="reunion-pay-number-row">
+                                        <span class="reunion-pay-number" data-copy-value="<?php echo esc_attr( $person['number'] ); ?>" title="Click to copy"><?php echo esc_html( $this->format_phone_display( $person['number'] ) ); ?></span>
+                                        <button type="button" class="reunion-copy-btn" data-copy-value="<?php echo esc_attr( $person['number'] ); ?>" aria-label="Copy number for <?php echo esc_attr( $person['name'] ); ?>">
+                                            <span class="reunion-copy-icon reunion-copy-icon-copy" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v3"></path></svg></span>
+                                            <span class="reunion-copy-icon reunion-copy-icon-check" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                                            <span class="reunion-copy-tooltip" role="status">Copied!</span>
+                                        </button>
+                                    </div>
                                 <?php else : ?>
-                                    <span class="reunion-pay-number reunion-pay-number-empty">নম্বর শীঘ্রই যোগ হবে</span>
-                                    <button type="button" class="reunion-copy-btn" disabled aria-label="Number not available"><span class="reunion-copy-icon reunion-copy-icon-copy" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2-2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v3"></path></svg></span></button>
+                                    <div class="reunion-pay-number-row">
+                                        <span class="reunion-pay-number reunion-pay-number-empty">নম্বর শীঘ্রই যোগ হবে</span>
+                                        <button type="button" class="reunion-copy-btn" disabled aria-label="Number not available"><span class="reunion-copy-icon reunion-copy-icon-copy" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2-2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v3"></path></svg></span></button>
+                                    </div>
                                 <?php endif; ?>
                             </div>
                             <span class="reunion-pay-personal-note">bKash / Nagad / Rocket (Personal)</span>

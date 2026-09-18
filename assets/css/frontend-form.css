@@ -11,9 +11,8 @@
 .reunion-reg-thankyou p { margin: 0; color: #4b5563; font-size: 15px; line-height: 1.8; max-width: 480px; margin: 0 auto; }
 
 .reunion-reg-card { background: #fff; border-radius: 20px; padding: 40px; box-shadow: 0 10px 40px rgba(20, 25, 40, 0.08); box-sizing: border-box; }
-.reunion-reg-heading { text-align: center; margin-bottom: 28px; }
-.reunion-reg-heading h2 { font-size: 28px; font-weight: 800; margin: 0 0 8px; }
-.reunion-reg-heading p { margin: 0; color: #6b7280; font-size: 15px; }
+.reunion-reg-heading { text-align: center; margin-bottom: 24px; }
+.reunion-reg-heading h2 { font-size: 28px; font-weight: 800; margin: 0; }
 
 .reunion-section-title { font-size: 16px; font-weight: 700; color: #374151; margin: 32px 0 16px; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; }
 .reunion-reg-form > .reunion-section-title:first-of-type { margin-top: 6px; }
@@ -81,11 +80,12 @@
 .reunion-pay-person { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; min-width: 0; overflow: hidden; }
 .reunion-pay-person-name { font-weight: 700; font-size: 14px; color: #1f2430; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid #f0f2f5; }
 .reunion-pay-method { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; min-width: 0; flex-wrap: nowrap; }
-.reunion-pay-method-single { flex-wrap: nowrap; }
-.reunion-pay-badges { display: inline-flex; gap: 4px; flex-shrink: 0; align-items: center; }
+.reunion-pay-method-stacked { flex-direction: column; align-items: stretch; gap: 8px; }
+.reunion-pay-method-stacked .reunion-pay-badges { display: inline-flex; gap: 4px; flex-shrink: 0; align-items: center; }
+.reunion-pay-number-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .reunion-pay-personal-note { display: block; font-size: 11px; color: #9ca3af; margin-top: 4px; }
 .reunion-pay-method-label { font-weight: 600; font-size: 11px; padding: 2px 7px; border-radius: 999px; color: #fff; white-space: nowrap; flex-shrink: 0; line-height: 1.4; }
-.reunion-pay-number { font-weight: 600; color: #1f2430; letter-spacing: 0.2px; cursor: pointer; user-select: all; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.reunion-pay-number { font-weight: 800; color: #1f2430; cursor: pointer; user-select: all; flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 19px; letter-spacing: 0.8px; line-height: 1.25; }
 .reunion-pay-number-empty { color: #9ca3af; font-weight: 500; cursor: default; }
 .reunion-copy-btn { margin-left: auto; position: relative; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; flex-shrink: 0; border: 1px solid #e3e5ea; background: #f7f8fa; border-radius: 8px; cursor: pointer; color: #6b7280; transition: background .15s, border-color .15s, color .15s; }
 .reunion-copy-btn:hover { background: #fff; border-color: #2f6fed; color: #2f6fed; }

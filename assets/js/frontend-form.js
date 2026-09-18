@@ -41,7 +41,7 @@
             return;
         }
 
-        var guests   = guestEl ? Math.max( 0, Math.min( 5, parseFloat( guestEl.value ) || 0 ) ) : 0;
+        var guests   = guestEl ? Math.max( 0, parseFloat( guestEl.value ) || 0 ) : 0;
         var donation = donEl ? Math.max( 0, parseFloat( donEl.value ) || 0 ) : 0;
         var total    = fee + ( guests * guestFee ) + donation;
 

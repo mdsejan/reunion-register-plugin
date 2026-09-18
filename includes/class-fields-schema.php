@@ -36,8 +36,8 @@ class Reunion_Reg_Fields_Schema {
     public static function get_fields() {
         $batch_years = range( 2025, 1970 ); // newest first
 
-        $education_levels = array( 'এসএসসি', 'এইচএসসি', 'ডিপ্লোমা', 'স্নাতক (অনার্স/পাস)', 'স্নাতকোত্তর', 'এমফিল/পিএইচডি', 'অন্যান্য' );
-        $blood_groups      = array( 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'জানা নেই' );
+        $education_levels = array( 'এসএসসি', '১০ম শ্রেণি', '৯ম শ্রেণি', '৮ম শ্রেণি', '৭ম শ্রেণি', '৬ষ্ঠ শ্রেণি' );
+        $blood_groups      = array( 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-' );
         $professions       = array( 'চাকুরীজীবী', 'ব্যবসায়ী', 'গৃহিণী', 'কৃষক', 'অবসরপ্রাপ্ত', 'ছাত্র/ছাত্রী', 'প্রবাসী', 'অন্যান্য' );
         $gift_options      = array( 'T-Shirt (S)', 'T-Shirt (M)', 'T-Shirt (L)', 'T-Shirt (XL)', 'T-Shirt (XXL)', 'শাড়ি (Sari)' );
         $payment_channels  = array( 'মোবাইল ব্যাংকিং', 'ব্যাংক একাউন্ট' );
@@ -55,12 +55,12 @@ class Reunion_Reg_Fields_Schema {
                 'placeholder' => 'আপনার ফোন নম্বর লিখুন',
             ),
             'email'               => array(
-                'section' => 1, 'label' => 'ইমেইল ঠিকানা (ঐচ্ছিক)', 'type' => 'email', 'required' => false,
-                'placeholder' => 'নিশ্চিতকরণ ইমেইলের জন্য (ঐচ্ছিক)',
+                'section' => 1, 'label' => 'ইমেইল ঠিকানা', 'type' => 'email', 'required' => true,
+                'placeholder' => 'আপনার ইমেইল ঠিকানা লিখুন',
             ),
             'father_husband_name' => array(
-                'section' => 1, 'label' => 'পিতা/স্বামীর নাম', 'type' => 'text', 'required' => true,
-                'placeholder' => 'পিতা বা স্বামীর নাম লিখুন',
+                'section' => 1, 'label' => 'পিতার নাম', 'type' => 'text', 'required' => true,
+                'placeholder' => 'পিতার নাম লিখুন',
             ),
             'mother_name'         => array(
                 'section' => 1, 'label' => 'মাতার নাম', 'type' => 'text', 'required' => true,
@@ -76,7 +76,7 @@ class Reunion_Reg_Fields_Schema {
             ),
             'blood_group'         => array(
                 'section' => 1, 'label' => 'ব্লাড গ্রুপ (ঐচ্ছিক)', 'type' => 'select', 'required' => false,
-                'options' => $blood_groups, 'default' => 'জানা নেই',
+                'options' => $blood_groups, 'placeholder' => 'সিলেক্ট করুন',
             ),
             'permanent_address'   => array(
                 'section' => 1, 'label' => 'স্থায়ী ঠিকানা', 'type' => 'text', 'required' => true,
@@ -119,8 +119,8 @@ class Reunion_Reg_Fields_Schema {
                 'options' => $gift_options,
             ),
             'guest_count'    => array(
-                'section' => 3, 'label' => 'অতিথির সংখ্যা (সর্বোচ্চ ৫ জন)', 'type' => 'number', 'required' => false,
-                'min' => 0, 'max' => 5, 'default' => 0,
+                'section' => 3, 'label' => 'অতিথির সংখ্যা', 'type' => 'number', 'required' => false,
+                'min' => 0, 'default' => 0,
                 'note' => '* বাবা, মা, স্ত্রী, সন্তান (প্রতিজন ৫০০/-)',
             ),
             'donation'       => array(
