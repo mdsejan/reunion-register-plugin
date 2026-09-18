@@ -41,7 +41,7 @@ class Reunion_Reg_Fields_Schema {
         $professions       = array( 'চাকুরীজীবী', 'ব্যবসায়ী', 'গৃহিণী', 'কৃষক', 'অবসরপ্রাপ্ত', 'ছাত্র/ছাত্রী', 'প্রবাসী', 'অন্যান্য' );
         $gift_options      = array( 'T-Shirt (S)', 'T-Shirt (M)', 'T-Shirt (L)', 'T-Shirt (XL)', 'T-Shirt (XXL)', 'শাড়ি (Sari)' );
         $payment_channels  = array( 'মোবাইল ব্যাংকিং', 'ব্যাংক একাউন্ট' );
-        $mobile_methods    = array( 'বিকাশ (bKash)', 'নগদ (Nagad)', 'রকেট (Rocket)' );
+        $mobile_methods    = self::get_mobile_banking_method_options();
 
         return array(
 
@@ -192,6 +192,27 @@ class Reunion_Reg_Fields_Schema {
         }
 
         return $settings;
+    }
+
+    public static function get_mobile_banking_method_options() {
+        $settings = self::get_payment_settings();
+        $persons = array(
+            array( 'label' => 'P1', 'number' => $settings['person1_number'] ),
+            array( 'label' => 'P2', 'number' => $settings['person2_number'] ),
+            array( 'label' => 'P3', 'number' => $settings['person3_number'] ),
+        );
+        $gateways = array( 'বিকাশ', 'নগদ', 'রকেট' );
+        $options  = array();
+
+        foreach ( $persons as $person ) {
+            $digits = preg_replace( '/\D/', '', (string) $person['number'] );
+            $last4  = $digits ? substr( $digits, -4 ) : '····';
+            foreach ( $gateways as $gw ) {
+                $options[] = sprintf( '(%s) %s - %s', $person['label'], $gw, $last4 );
+            }
+        }
+
+        return $options;
     }
 
     /**
