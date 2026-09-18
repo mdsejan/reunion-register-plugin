@@ -17,7 +17,7 @@ class Reunion_Reg_Fields_Schema {
      * Supported keys per field:
      *   section     (int)    Groups fields under a numbered heading on the public form (1-4).
      *   label       (string) Field label.
-     *   type        (string) text | tel | email | select | radio | number | computed
+     *   type        (string) text | tel | email | select | radio | number | computed | file
      *   required    (bool)   Whether the field must be filled — ignored when depends_on doesn't match.
      *   options     (array)  Choices for select/radio (value === label, kept human-readable in CSV/admin).
      *   placeholder (string) Input placeholder, or the "-- select --" prompt for select fields.
@@ -150,6 +150,13 @@ class Reunion_Reg_Fields_Schema {
             'tnx_id'                 => array(
                 'section' => 4, 'label' => 'ট্রানজেকশন আইডি (TxID)', 'type' => 'text', 'required' => true,
                 'placeholder' => 'যেমন: BKA3X7R9Z2',
+            ),
+
+            // ---------- ৫. আবেদনকারীর ছবি / পেমেন্ট রসিদ ----------
+            'applicant_photo'        => array(
+                'section' => 5, 'label' => 'আপনার ছবি আপলোড করুন', 'type' => 'file', 'required' => true,
+                'accept'  => 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp',
+                'note'    => 'JPG, PNG বা WebP — সর্বোচ্চ ২ MB (৫-১০ MB বড় ছবি স্বয়ংক্রিয়ভাবে ১২০০px ও ~৮২% কোয়ালিটিতে কম্প্রেস হয়ে ২ MB-এর নিচে নেমে আসবে)',
             ),
         );
     }

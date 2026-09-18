@@ -61,6 +61,8 @@ class Reunion_Reg_Frontend_Form {
             'duplicate_tnx'   => array( 'error', 'এই ট্রানজেকশন আইডি ইতিমধ্যে জমা দেওয়া হয়েছে। অনুগ্রহ করে আবার যাচাই করুন, অথবা ভুল মনে হলে আমাদের সাথে যোগাযোগ করুন।' ),
             'rate_limited'    => array( 'error', 'অল্প সময়ের মধ্যে অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন।' ),
             'missing_fields'  => array( 'error', 'অনুগ্রহ করে সব আবশ্যক (*) ফিল্ড সঠিকভাবে পূরণ করে আবার চেষ্টা করুন।' ),
+            'invalid_file'    => array( 'error', 'ছবির ফরম্যাট সঠিক নয়। অনুগ্রহ করে JPG, PNG বা WebP ফাইল আপলোড করুন।' ),
+            'file_too_large'  => array( 'error', 'ছবিটি অনেক বড়। সর্বোচ্চ ২ MB পর্যন্ত অনুমোদিত। অনুগ্রহ করে ছোট/কম্প্রেস করা ছবি ব্যবহার করুন।' ),
             'error'           => array( 'error', 'দুঃখিত, কিছু একটা সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।' ),
         );
 
@@ -73,11 +75,12 @@ class Reunion_Reg_Frontend_Form {
             2 => '২. পেশাগত বিবরণ',
             3 => '৩. উৎসবের তথ্য ও ফি',
             4 => '৪. পেমেন্ট পদ্ধতি',
+            5 => '৫. আবেদনকারীর ছবি',
         );
 
         // Fields that should span the full width of the responsive grid
         // instead of sharing a row with a neighbouring field.
-        $full_width_fields = array( 'permanent_address', 'present_address', 'profession', 'gift_dress', 'total_amount', 'payment_channel' );
+        $full_width_fields = array( 'permanent_address', 'present_address', 'profession', 'gift_dress', 'total_amount', 'payment_channel', 'applicant_photo' );
 
         ob_start();
         ?>
@@ -102,7 +105,7 @@ class Reunion_Reg_Frontend_Form {
                     <h2>রেজিস্ট্রেশন ফরম</h2>
                 </div>
 
-                <form class="reunion-reg-form" method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                <form class="reunion-reg-form" method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="reunion_reg_submit">
                     <?php wp_nonce_field( REUNION_REG_NONCE_ACTION, REUNION_REG_NONCE_FIELD ); ?>
 
@@ -272,6 +275,24 @@ class Reunion_Reg_Frontend_Form {
                 <div class="reunion-total-box">
                     <span class="reunion-total-label"><?php echo esc_html( $field['label'] ); ?>:</span>
                     <strong class="reunion-total-value">৳<span id="reunion_total_number">0</span></strong>
+                </div>
+
+            <?php elseif ( 'file' === $field['type'] ) : ?>
+                <div class="reunion-file-field">
+                    <input
+                        type="file"
+                        name="<?php echo esc_attr( $key ); ?>"
+                        id="reunion_<?php echo esc_attr( $key ); ?>"
+                        class="reunion-file-input"
+                        accept="<?php echo esc_attr( $field['accept'] ?? 'image/jpeg,image/png,image/webp' ); ?>"
+                        <?php echo $required_attr; ?><?php echo $conditional_required_attr; /* phpcs:ignore WordPress.Security.EscapeOutput -- built from esc_attr() pieces above */ ?>
+                    >
+                    <div class="reunion-file-control">
+                        <label for="reunion_<?php echo esc_attr( $key ); ?>" class="reunion-file-btn">Choose file</label>
+                        <span class="reunion-file-meta" id="reunion_<?php echo esc_attr( $key ); ?>_filename">No file chosen</span>
+                    </div>
+                    <p class="reunion-reg-file-status" id="reunion_<?php echo esc_attr( $key ); ?>_status" hidden aria-live="polite"></p>
+                    <p class="reunion-reg-file-error" id="reunion_<?php echo esc_attr( $key ); ?>_error" hidden role="alert"></p>
                 </div>
 
             <?php else : ?>

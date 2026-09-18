@@ -232,6 +232,7 @@ class Reunion_Reg_Admin_Entry_Metabox {
         echo '<tr><th style="text-align:left;">Registration ID</th><td>' . ( $reg_id ? '<strong>' . esc_html( $reg_id ) . '</strong>' : '<em>Not assigned yet (assigned on approval)</em>' ) . '</td></tr>';
 
         foreach ( $fields as $key => $field ) {
+            if ( 'file' === $field['type'] ) { continue; }
             $value = get_post_meta( $post->ID, '_reunion_' . $key, true );
             echo '<tr>';
             echo '<th style="width:180px;text-align:left;">' . esc_html( $field['label'] ) . '</th>';
@@ -252,6 +253,10 @@ class Reunion_Reg_Admin_Entry_Metabox {
 
             echo '</td>';
             echo '</tr>';
+        }
+        $photo_url = get_post_meta( $post->ID, '_reunion_applicant_photo_url', true );
+        if ( $photo_url ) {
+            echo '<tr><th style="text-align:left;">আবেদনকারীর ছবি</th><td><a href="' . esc_url( $photo_url ) . '" target="_blank" rel="noopener"><img src="' . esc_url( $photo_url ) . '" alt="Applicant photo" style="max-width:220px;height:auto;border:1px solid #e5e7eb;border-radius:8px;"></a><br><a href="' . esc_url( $photo_url ) . '" target="_blank" rel="noopener">Open full size</a></td></tr>';
         }
         $submitted_at = get_post_meta( $post->ID, '_reunion_submitted_at', true );
         echo '<tr><th style="text-align:left;">Submitted At</th><td>' . esc_html( $submitted_at ) . '</td></tr>';

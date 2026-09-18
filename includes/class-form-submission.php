@@ -101,12 +101,64 @@ class Reunion_Reg_Form_Submission {
 
         $fields = Reunion_Reg_Fields_Schema::get_fields();
         $clean  = array();
+        $applicant_photo_file = null;
         $has_missing_required = false;
+
+        $file_field_keys = array();
+        foreach ( $fields as $fk => $fv ) {
+            if ( ( $fv['type'] ?? '' ) === 'file' ) { $file_field_keys[] = $fk; }
+        }
+        if ( ! empty( $file_field_keys ) ) {
+            $file_key = $file_field_keys[0];
+            $uploaded = isset( $_FILES[ $file_key ] ) ? $_FILES[ $file_key ] : null;
+            $is_required_file = ! empty( $fields[ $file_key ]['required'] );
+            $has_upload = is_array( $uploaded ) && isset( $uploaded['error'] ) && 4 !== (int) $uploaded['error'];
+            if ( ! $has_upload && $is_required_file ) {
+                $is_applicable = Reunion_Reg_Fields_Schema::field_is_applicable( $fields[ $file_key ], array() );
+                if ( $is_applicable ) { $has_missing_required = true; }
+            } elseif ( $has_upload ) {
+                if ( 0 !== (int) $uploaded['error'] ) {
+                    $this->redirect_with_retry( 'error', array() );
+                }
+                $max_bytes = 2 * 1024 * 1024;
+                $allowed_mimes = array( 'image/jpeg', 'image/png', 'image/webp' );
+                $allowed_exts  = array( 'jpg', 'jpeg', 'png', 'webp' );
+                $check = wp_check_filetype( $uploaded['name'] ?? '', array( 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp' ) );
+                $ext_ok  = $check && ! empty( $check['ext'] ) && in_array( strtolower( $check['ext'] ), $allowed_exts, true );
+                $mime_ok = ! empty( $uploaded['type'] ) && in_array( strtolower( $uploaded['type'] ), $allowed_mimes, true );
+                if ( ! $ext_ok && ! $mime_ok ) {
+                    $finfo_ok = false;
+                    if ( ! empty( $uploaded['tmp_name'] ) && is_uploaded_file( $uploaded['tmp_name'] ) ) {
+                        $finfo = @finfo_open( FILEINFO_MIME_TYPE );
+                        if ( $finfo ) {
+                            $detected = @finfo_file( $finfo, $uploaded['tmp_name'] );
+                            @finfo_close( $finfo );
+                            if ( $detected && in_array( strtolower( $detected ), $allowed_mimes, true ) ) { $finfo_ok = true; }
+                        }
+                        if ( ! $finfo_ok ) {
+                            $imginfo = @getimagesize( $uploaded['tmp_name'] );
+                            if ( $imginfo && isset( $imginfo['mime'] ) && in_array( strtolower( $imginfo['mime'] ), $allowed_mimes, true ) ) { $finfo_ok = true; }
+                        }
+                    }
+                    if ( ! $finfo_ok ) { $this->redirect_with_retry( 'invalid_file', array() ); }
+                }
+                $size = isset( $uploaded['size'] ) ? (int) $uploaded['size'] : 0;
+                if ( $size > $max_bytes ) { $this->redirect_with_retry( 'file_too_large', array() ); }
+                if ( ! empty( $uploaded['tmp_name'] ) && is_uploaded_file( $uploaded['tmp_name'] ) ) {
+                    $real_size = @filesize( $uploaded['tmp_name'] );
+                    if ( $real_size && $real_size > $max_bytes ) { $this->redirect_with_retry( 'file_too_large', array() ); }
+                }
+                $overrides = array( 'test_form' => false, 'mimes' => array( 'jpg|jpeg|jpe' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp' ) );
+                $move = wp_handle_upload( $uploaded, $overrides );
+                if ( ! $move || ! empty( $move['error'] ) ) { $this->redirect_with_retry( 'error', array() ); }
+                if ( ! empty( $move['file'] ) && @filesize( $move['file'] ) > $max_bytes ) { @unlink( $move['file'] ); $this->redirect_with_retry( 'file_too_large', array() ); }
+                $applicant_photo_file = $move;
+            }
+        }
 
         foreach ( $fields as $key => $field ) {
 
-            // Computed fields are never trusted from $_POST — calculated below instead.
-            if ( 'computed' === $field['type'] ) {
+            if ( 'computed' === $field['type'] || 'file' === $field['type'] ) {
                 continue;
             }
 
@@ -162,6 +214,7 @@ class Reunion_Reg_Form_Submission {
         $clean['total_amount'] = (float) $payment_settings['registration_fee'] + ( $guest_count * (float) $payment_settings['guest_fee'] ) + $donation;
 
         if ( $has_missing_required ) {
+            if ( $applicant_photo_file && ! empty( $applicant_photo_file['file'] ) ) { @unlink( $applicant_photo_file['file'] ); }
             $this->redirect_with_retry( 'missing_fields', $clean );
         }
 
@@ -204,6 +257,7 @@ class Reunion_Reg_Form_Submission {
         }
 
         if ( $duplicate_field ) {
+            if ( $applicant_photo_file && ! empty( $applicant_photo_file['file'] ) ) { @unlink( $applicant_photo_file['file'] ); }
             $reason = array(
                 'phone'  => 'duplicate_phone',
                 'email'  => 'duplicate_email',
@@ -219,12 +273,18 @@ class Reunion_Reg_Form_Submission {
         ), true );
 
         if ( is_wp_error( $post_id ) || ! $post_id ) {
+            if ( $applicant_photo_file && ! empty( $applicant_photo_file['file'] ) ) { @unlink( $applicant_photo_file['file'] ); }
             $this->redirect_with_retry( 'error', $clean );
         }
 
         foreach ( $clean as $key => $value ) {
             update_post_meta( $post_id, '_reunion_' . $key, $value );
         }
+        if ( $applicant_photo_file && ! empty( $applicant_photo_file['url'] ) ) {
+            update_post_meta( $post_id, '_reunion_applicant_photo_url', esc_url_raw( $applicant_photo_file['url'] ) );
+            update_post_meta( $post_id, '_reunion_applicant_photo_file', sanitize_text_field( $applicant_photo_file['file'] ) );
+        }
+        $clean['applicant_photo_url'] = $applicant_photo_file['url'] ?? '';
 
         update_post_meta( $post_id, '_reunion_submitted_at', current_time( 'mysql' ) );
         update_post_meta( $post_id, '_reunion_submitted_ip', sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? '' ) );
