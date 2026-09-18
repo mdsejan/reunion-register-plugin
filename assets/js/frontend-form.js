@@ -183,32 +183,92 @@
         return false;
     }
 
-    async function compressImageFile(file) {
-        var img = await loadImageFromFile(file);
+    function loadImageFromFileViaReader(file) {
+        return new Promise(function (resolve, reject) {
+            var reader = new FileReader();
+            reader.onload = function () {
+                var img = new Image();
+                img.onload = function () { resolve(img); };
+                img.onerror = function () { reject(new Error('decode failed')); };
+                img.src = reader.result;
+            };
+            reader.onerror = function () { reject(new Error('read failed')); };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function compressImageFile(file, maxDim, quality) {
+        maxDim = maxDim || UPLOAD_MAX_DIM;
+        quality = typeof quality === 'number' ? quality : UPLOAD_QUALITY;
+        var img = null;
+        var url = '';
+        try {
+            try {
+                url = URL.createObjectURL(file);
+                img = await new Promise(function (resolve, reject) {
+                    var im = new Image();
+                    var timer = setTimeout(function () { reject(new Error('load timeout')); }, 8000);
+                    im.onload = function () { clearTimeout(timer); if (url) URL.revokeObjectURL(url); url = ''; resolve(im); };
+                    im.onerror = function () { clearTimeout(timer); if (url) URL.revokeObjectURL(url); url = ''; reject(new Error('decode failed')); };
+                    im.src = url;
+                });
+            } catch (e) {
+                if (url) { try { URL.revokeObjectURL(url); } catch (_) {} url = ''; }
+                img = await loadImageFromFileViaReader(file);
+            }
+        } catch (e) { if (url) { try { URL.revokeObjectURL(url); } catch (_) {} } throw e; }
         var width = img.naturalWidth || img.width;
         var height = img.naturalHeight || img.height;
-        if (!width || !height) return null;
+        if (!width || !height) throw new Error('bad dimensions');
         var maxSide = Math.max(width, height);
-        var scale = maxSide > UPLOAD_MAX_DIM ? (UPLOAD_MAX_DIM / maxSide) : 1;
+        var scale = maxSide > maxDim ? (maxDim / maxSide) : 1;
         if (scale >= 1 && file.size <= UPLOAD_TARGET_BYTES) {
             var isPng = /^image\/png$/i.test(file.type || '');
             if (!isPng) return null;
         }
         var w = Math.max(1, Math.round(width * scale));
         var h = Math.max(1, Math.round(height * scale));
+        var totalPixels = w * h;
+        if (totalPixels > 4000000) {
+            var extra = Math.sqrt(4000000 / totalPixels);
+            w = Math.max(1, Math.round(w * extra));
+            h = Math.max(1, Math.round(h * extra));
+        }
         var canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         var ctx = canvas.getContext('2d');
-        if (!ctx) return null;
+        if (!ctx) throw new Error('no ctx');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, w, h);
         ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
+        try { ctx.imageSmoothingQuality = 'high'; } catch (_) {}
         ctx.drawImage(img, 0, 0, w, h);
-        var blob = await canvasToBlob(canvas, 'image/jpeg', UPLOAD_QUALITY);
-        if (!blob || !blob.size) return null;
+        var blob = await canvasToBlob(canvas, 'image/jpeg', quality);
+        try { canvas.width = 0; canvas.height = 0; } catch (_) {}
+        if (!blob || !blob.size) throw new Error('empty blob');
         if (blob.size >= file.size && scale >= 1) return null;
         return blob;
+    }
+
+    async function compressWithFallback(file) {
+        try {
+            var first = await compressImageFile(file, UPLOAD_MAX_DIM, UPLOAD_QUALITY);
+            if (first) return first;
+            if (file.size > UPLOAD_MAX_BYTES) {
+                return await compressImageFile(file, 1000, 0.72);
+            }
+            return first;
+        } catch (e) {
+            try {
+                return await compressImageFile(file, 1000, 0.72);
+            } catch (e2) {
+                try {
+                    return await compressImageFile(file, 800, 0.6);
+                } catch (e3) {
+                    throw e3;
+                }
+            }
+        }
     }
 
     function wireOneUpload(input) {
@@ -230,32 +290,26 @@
             if (busy) setFieldStatus(input, text || 'Optimizing image...', true);
         }
 
-        input.addEventListener('change', function () {
-            var file = input.files && input.files[0] ? input.files[0] : null;
+        function handleFile(file) {
             setFieldError(input, '');
             setFieldStatus(input, '', false);
-
             if (!file) {
                 setFilename(input, 'No file chosen', false, false);
                 return;
             }
-
             if (!isAllowedImageFile(file)) {
                 setFieldError(input, 'অসমর্থিত ফরম্যাট। অনুগ্রহ করে ' + UPLOAD_ALLOWED_LABEL + ' ফাইল আপলোড করুন।');
                 setFilename(input, file.name + ' — অসমর্থিত ফরম্যাট', true, false);
                 input.value = '';
                 return;
             }
-
             setFilename(input, file.name + ' (' + formatBytes(file.size) + ')', false, true);
-
             if (file.size < 900 * 1024 && file.size <= UPLOAD_TARGET_BYTES) {
                 setFieldStatus(input, 'Ready — ' + formatBytes(file.size), false);
                 return;
             }
-
             setBusy(true, 'Optimizing image...');
-            var p = compressImageFile(file).then(function (blob) {
+            var p = compressWithFallback(file).then(function (blob) {
                 if (p !== pendingPromise) return;
                 if (blob && blob.size) {
                     var ok = replaceInputFile(input, blob, file.name);
@@ -282,13 +336,27 @@
                         setFieldStatus(input, 'Ready — ' + formatBytes(file.size), false);
                     }
                 }
-            }).catch(function () {
+            }).catch(function (err) {
                 if (p !== pendingPromise) return;
-                setFieldStatus(input, 'Ready — ' + formatBytes(file.size), false);
+                if (file.size > UPLOAD_MAX_BYTES) {
+                    setFieldError(input, 'ফাইলটি অনেক বড় (' + formatBytes(file.size) + ') এবং অপ্টিমাইজ করা যায়নি। অনুগ্রহ করে ছোট ছবি বেছে নিন।');
+                    setFilename(input, file.name + ' — অপ্টিমাইজ ব্যর্থ', true, false);
+                } else {
+                    setFieldStatus(input, 'Ready — ' + formatBytes(file.size) + ' (অপ্টিমাইজ ছাড়াই আপলোড হবে)', false);
+                }
             }).then(function () {
                 if (p === pendingPromise) { pendingPromise = null; setBusy(false); }
             });
             pendingPromise = p;
+        }
+
+        input.addEventListener('change', function () {
+            var file = input.files && input.files[0] ? input.files[0] : null;
+            handleFile(file);
+        });
+        input.addEventListener('input', function () {
+            var file = input.files && input.files[0] ? input.files[0] : null;
+            if (file) handleFile(file);
         });
 
         input.addEventListener('click', function () { setFieldError(input, ''); });

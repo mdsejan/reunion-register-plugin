@@ -155,7 +155,7 @@ class Reunion_Reg_Fields_Schema {
             'payment_receipt'        => array(
                 'section' => 4, 'label' => 'পেমেন্ট রসিদ / স্ক্রিনশট', 'type' => 'file', 'required' => true,
                 'accept'  => 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp',
-                'note'    => 'JPG, PNG বা WebP (বড় ছবি স্বয়ংক্রিয়ভাবে অপ্টিমাইজ হবে)',
+                'note'    => 'JPG, PNG, WebP (সর্বোচ্চ ২ MB)। বড় ছবি হলে ILoveIMG বা CompressNow দিয়ে সাইজ কমিয়ে দিন।',
                 'depends_on' => array( 'field' => 'payment_channel', 'value' => 'ব্যাংক একাউন্ট' ),
             ),
 
@@ -163,7 +163,7 @@ class Reunion_Reg_Fields_Schema {
             'applicant_photo'        => array(
                 'section' => 5, 'label' => 'আপনার ছবি আপলোড করুন', 'type' => 'file', 'required' => true,
                 'accept'  => 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp',
-                'note'    => 'JPG, PNG বা WebP (বড় ছবি স্বয়ংক্রিয়ভাবে অপ্টিমাইজ হবে)',
+                'note'    => 'JPG, PNG, WebP (সর্বোচ্চ ২ MB)। বড় ছবি হলে ILoveIMG বা CompressNow দিয়ে সাইজ কমিয়ে দিন।',
             ),
         );
     }
