@@ -147,10 +147,6 @@ class Reunion_Reg_Fields_Schema {
                 'placeholder' => 'যে ব্যাংক থেকে জমা দিয়েছেন',
                 'depends_on' => array( 'field' => 'payment_channel', 'value' => 'ব্যাংক একাউন্ট' ),
             ),
-            'sender_number'          => array(
-                'section' => 4, 'label' => 'প্রেরক নম্বর (যে নম্বর থেকে দিয়েছেন)', 'type' => 'tel', 'required' => true,
-                'placeholder' => '01XXXXXXXXX',
-            ),
             'tnx_id'                 => array(
                 'section' => 4, 'label' => 'ট্রানজেকশন আইডি (TxID)', 'type' => 'text', 'required' => true,
                 'placeholder' => 'যেমন: BKA3X7R9Z2',
@@ -206,9 +202,9 @@ class Reunion_Reg_Fields_Schema {
 
         foreach ( $persons as $person ) {
             $digits = preg_replace( '/\D/', '', (string) $person['number'] );
-            $last4  = $digits ? substr( $digits, -4 ) : '····';
+            $full   = $digits ?: '—';
             foreach ( $gateways as $gw ) {
-                $options[] = sprintf( '(%s) %s - %s', $person['label'], $gw, $last4 );
+                $options[] = sprintf( '%s - %s (%s)', $gw, $full, $person['label'] );
             }
         }
 

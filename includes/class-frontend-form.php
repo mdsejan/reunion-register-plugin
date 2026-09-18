@@ -98,9 +98,9 @@ class Reunion_Reg_Frontend_Form {
 
             <?php if ( ! $success ) : ?>
             <div class="reunion-reg-card">
-                <!-- <div class="reunion-reg-heading">
+                <div class="reunion-reg-heading">
                     <h2>রেজিস্ট্রেশন ফরম</h2>
-                </div> -->
+                </div>
 
                 <form class="reunion-reg-form" method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                     <input type="hidden" name="action" value="reunion_reg_submit">
