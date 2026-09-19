@@ -89,10 +89,40 @@ class Reunion_Reg_Summary_Report {
         $stats    = $this->get_registration_stats();
         $statuses = Reunion_Reg_Fields_Schema::get_statuses();
         ?>
-        <div class="wrap">
-            <h1>Registrations Summary</h1>
+        <style>
+        .reunion-reg-summary-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
+        .reunion-reg-print-btn{white-space:nowrap;}
+        @media print{
+            @page{size:A4;margin:12mm 10mm;}
+            html.wp-toolbar{padding-top:0 !important;}
+            #wpadminbar,#adminmenumain,#adminmenuback,#adminmenuwrap,#wpfooter,.update-nag,.notice,.error,.updated,#screen-meta,#screen-meta-links{display:none !important;}
+            #wpcontent{margin-left:0 !important;padding-left:0 !important;}
+            body.wp-admin{background:#fff !important;}
+            #wpbody-content{padding-bottom:0 !important;}
+            .reunion-reg-summary-wrap{margin:0 !important;max-width:none !important;}
+            .reunion-reg-summary-header{margin-bottom:12px !important;}
+            .reunion-reg-print-btn{display:none !important;}
+            .reunion-reg-summary-wrap h1{font-size:20px !important;margin:0 !important;color:#111 !important;}
+            .reunion-reg-summary-wrap h2{font-size:15px !important;margin:18px 0 8px !important;color:#111 !important;}
+            .reunion-reg-summary-cards{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:10px !important;margin:12px 0 16px !important;}
+            .reunion-reg-summary-cards>div{border:1px solid #bbb !important;box-shadow:none !important;break-inside:avoid;padding:12px 14px !important;background:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+            .reunion-reg-summary-cards>div>div:first-child{font-size:11px !important;}
+            .reunion-reg-summary-cards>div>div:last-child{font-size:18px !important;}
+            .reunion-reg-summary-table-wrap{overflow:visible !important;}
+            .reunion-reg-summary-wrap table{border-collapse:collapse !important;width:100% !important;min-width:0 !important;font-size:11px !important;border:1px solid #444 !important;}
+            .reunion-reg-summary-wrap table th,.reunion-reg-summary-wrap table td{border:1px solid #999 !important;padding:6px 7px !important;text-align:left !important;}
+            .reunion-reg-summary-wrap table thead th{background:#f0f0f0 !important;font-weight:700 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+            .reunion-reg-summary-wrap table tfoot td{background:#ededed !important;font-weight:700 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+            .reunion-reg-summary-wrap table tr{break-inside:avoid;page-break-inside:avoid;}
+        }
+        </style>
+        <div class="wrap reunion-reg-summary-wrap">
+            <div class="reunion-reg-summary-header">
+                <h1>Registrations Summary</h1>
+                <button type="button" class="button button-primary reunion-reg-print-btn" onclick="window.print()">Print Summary</button>
+            </div>
 
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:20px 0 28px;">
+            <div class="reunion-reg-summary-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:20px 0 28px;">
                 <div style="background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:18px 24px;">
                     <div style="font-size:13px;color:#646970;">Total Registrations</div>
                     <div style="font-size:28px;font-weight:700;line-height:1.2;"><?php echo (int) $stats['total']; ?></div>
@@ -117,7 +147,7 @@ class Reunion_Reg_Summary_Report {
             <?php if ( empty( $stats['by_batch'] ) ) : ?>
                 <p>এখনো কোনো রেজিস্ট্রেশন জমা পড়েনি।</p>
             <?php else : ?>
-                <div style="overflow-x:auto;">
+                <div class="reunion-reg-summary-table-wrap" style="overflow-x:auto;">
                     <table class="widefat striped" style="min-width:860px;">
                         <thead>
                             <tr>
