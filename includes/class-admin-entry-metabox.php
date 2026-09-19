@@ -15,6 +15,8 @@ class Reunion_Reg_Admin_Entry_Metabox {
 
         // Handle manual/offline entries created via the native "Add Post" screen
         add_action( 'save_post_' . REUNION_REG_CPT_SLUG, array( $this, 'handle_manual_add_post_save' ), 10, 3 );
+        add_action( 'save_post_' . REUNION_REG_CPT_SLUG, array( $this, 'handle_edit_post_save' ), 10, 3 );
+        add_filter( 'redirect_post_location', array( $this, 'filter_redirect_location' ), 10, 2 );
 
         add_action( 'admin_enqueue_scripts', array( $this, 'register_assets' ) );
     }
@@ -214,16 +216,87 @@ class Reunion_Reg_Admin_Entry_Metabox {
         }
     }
 
+    public function handle_edit_post_save( $post_id, $post, $update ) {
+        if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+            return;
+        }
+        if ( get_post_type( $post_id ) !== REUNION_REG_CPT_SLUG ) {
+            return;
+        }
+        if ( ! isset( $_POST['reunion_reg_edit_nonce'] ) || ! wp_verify_nonce( $_POST['reunion_reg_edit_nonce'], REUNION_REG_ADMIN_ACTION_NONCE . '_edit_' . $post_id ) ) {
+            return;
+        }
+        if ( ! current_user_can( 'edit_post', $post_id ) || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        $has_edit_field = false;
+        foreach ( array_keys( Reunion_Reg_Fields_Schema::get_fields() ) as $k ) {
+            if ( isset( $_POST[ 'reunion_edit_' . $k ] ) ) { $has_edit_field = true; break; }
+        }
+        if ( ! $has_edit_field ) {
+            return;
+        }
+        $fields = Reunion_Reg_Fields_Schema::get_fields();
+        foreach ( $fields as $key => $field ) {
+            if ( 'file' === $field['type'] ) { continue; }
+            $raw_value = isset( $_POST[ 'reunion_edit_' . $key ] ) ? wp_unslash( $_POST[ 'reunion_edit_' . $key ] ) : '';
+            switch ( $field['type'] ) {
+                case 'email':
+                    $value = sanitize_email( $raw_value );
+                    break;
+                case 'tel':
+                    $value = sanitize_text_field( preg_replace( '/[^0-9+\-\s()]/', '', $raw_value ) );
+                    break;
+                case 'number':
+                case 'computed':
+                    $value = is_numeric( $raw_value ) ? (float) $raw_value : 0;
+                    break;
+                case 'select':
+                case 'radio':
+                    $value = sanitize_text_field( $raw_value );
+                    if ( '' !== $value && ! in_array( $value, array_map( 'strval', $field['options'] ), true ) ) {
+                        $value = '';
+                    }
+                    break;
+                default:
+                    $value = sanitize_text_field( $raw_value );
+                    break;
+            }
+            update_post_meta( $post_id, '_reunion_' . $key, $value );
+        }
+        $name   = get_post_meta( $post_id, '_reunion_full_name', true );
+        $tnx_id = get_post_meta( $post_id, '_reunion_tnx_id', true );
+        $new_title = trim( $name . ' — ' . $tnx_id, ' —' );
+        if ( $new_title !== $post->post_title ) {
+            remove_action( 'save_post_' . REUNION_REG_CPT_SLUG, array( $this, 'handle_manual_add_post_save' ), 10 );
+            remove_action( 'save_post_' . REUNION_REG_CPT_SLUG, array( $this, 'handle_edit_post_save' ), 10 );
+            wp_update_post( array( 'ID' => $post_id, 'post_title' => $new_title ) );
+            add_action( 'save_post_' . REUNION_REG_CPT_SLUG, array( $this, 'handle_manual_add_post_save' ), 10, 3 );
+            add_action( 'save_post_' . REUNION_REG_CPT_SLUG, array( $this, 'handle_edit_post_save' ), 10, 3 );
+        }
+    }
+
+    public function filter_redirect_location( $location, $post_id ) {
+        if ( ! $post_id || get_post_type( $post_id ) !== REUNION_REG_CPT_SLUG ) {
+            return $location;
+        }
+        if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+            return $location;
+        }
+        if ( ! isset( $_POST['reunion_reg_edit_nonce'] ) || ! wp_verify_nonce( $_POST['reunion_reg_edit_nonce'], REUNION_REG_ADMIN_ACTION_NONCE . '_edit_' . $post_id ) ) {
+            return $location;
+        }
+        if ( ! current_user_can( 'edit_post', $post_id ) ) {
+            return $location;
+        }
+        return add_query_arg( 'reunion_admin_notice', 'saved', $location );
+    }
+
     public function render_entry_meta_box( $post ) {
         $fields = Reunion_Reg_Fields_Schema::get_fields();
         $status = Reunion_Reg_CPT::get_status( $post->ID );
         $reg_id = get_post_meta( $post->ID, '_reunion_reg_id', true );
 
-        $save_url = admin_url( 'admin-post.php' );
-
-        echo '<form method="POST" action="' . esc_url( $save_url ) . '">';
-        echo '<input type="hidden" name="action" value="reunion_reg_save_edit">';
-        echo '<input type="hidden" name="post_id" value="' . esc_attr( $post->ID ) . '">';
         wp_nonce_field( REUNION_REG_ADMIN_ACTION_NONCE . '_edit_' . $post->ID, 'reunion_reg_edit_nonce' );
 
         echo '<table class="form-table"><tbody>';
@@ -271,9 +344,6 @@ class Reunion_Reg_Admin_Entry_Metabox {
         $submitted_at = get_post_meta( $post->ID, '_reunion_submitted_at', true );
         echo '<tr><th style="text-align:left;">Submitted At</th><td>' . esc_html( $submitted_at ) . '</td></tr>';
         echo '</tbody></table>';
-
-        echo '<p style="margin-top:12px;"><button type="submit" class="button">Save Changes</button></p>';
-        echo '</form>';
 
         $this->render_admin_total_calc_script( 'reunion_edit_guest_count', 'reunion_edit_donation', 'reunion_edit_total_amount' );
 
