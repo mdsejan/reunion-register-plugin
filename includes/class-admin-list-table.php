@@ -20,7 +20,7 @@ class Reunion_Reg_Admin_List_Table {
         add_filter( 'parse_query', array( $this, 'filter_by_status' ) );
 
         // Approve / Reject row actions
-        add_filter( 'post_row_actions', array( $this, 'add_row_actions' ), 10, 2 );
+        add_filter( 'post_row_actions', array( $this, 'filter_row_actions' ), 10, 2 );
     }
 
     /**
@@ -75,28 +75,11 @@ class Reunion_Reg_Admin_List_Table {
         }
     }
 
-    /**
-     * Add Approve/Reject quick links directly on the list table rows.
-     */
-    public function add_row_actions( $actions, $post ) {
+    public function filter_row_actions( $actions, $post ) {
         if ( $post->post_type !== REUNION_REG_CPT_SLUG ) {
             return $actions;
         }
-
-        if ( Reunion_Reg_CPT::get_status( $post->ID ) === 'pending' ) {
-            $approve_url = wp_nonce_url(
-                admin_url( 'admin-post.php?action=reunion_reg_approve&post_id=' . $post->ID ),
-                REUNION_REG_ADMIN_ACTION_NONCE . '_' . $post->ID
-            );
-            $reject_url = wp_nonce_url(
-                admin_url( 'admin-post.php?action=reunion_reg_reject&post_id=' . $post->ID ),
-                REUNION_REG_ADMIN_ACTION_NONCE . '_' . $post->ID
-            );
-
-            $actions['approve'] = '<a href="' . esc_url( $approve_url ) . '" style="color:#1e4620;" onclick="return confirm(\'Approve this registration? An email will be sent.\');">Approve</a>';
-            $actions['reject']  = '<a href="' . esc_url( $reject_url ) . '" style="color:#611a15;" onclick="return confirm(\'Reject this registration? An email will be sent.\');">Reject</a>';
-        }
-
+        unset( $actions['approve'], $actions['reject'] );
         return $actions;
     }
 
