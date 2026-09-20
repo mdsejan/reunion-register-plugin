@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Reunion Registration Form
  * Description: Registration form with manual payment verification (bKash/Nagad/Rocket + Transaction ID), admin Approve/Reject workflow, auto-generated Registration ID (Batch-Number format), email confirmations, SMS notifications, CSV export, and a Summary dashboard.
- * Version: 2.1.0
+ * Version: 3.0.0
  * Author: Sejan
  * Text Domain: reunion-registration
  * Domain Path: /languages
@@ -29,13 +29,20 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+if ( ! function_exists( 'get_plugin_data' ) ) {
+    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+}
+$_reunion_reg_header = get_plugin_data( __FILE__, false, false );
+$_reunion_reg_version = ! empty( $_reunion_reg_header['Version'] ) ? $_reunion_reg_header['Version'] : '3.0.0';
+
 // ---------------------------------------------------------------------
 // Plugin-wide constants — the single source of truth for every include
 // file. Values are byte-identical to the pre-refactor single-file plugin,
 // so existing postmeta keys, option names, and nonce actions keep working
 // against the same database without any migration.
+// REUNION_REG_VERSION is read dynamically from the header above.
 // ---------------------------------------------------------------------
-define( 'REUNION_REG_VERSION', '2.1.0' );
+define( 'REUNION_REG_VERSION', $_reunion_reg_version );
 define( 'REUNION_REG_PLUGIN_FILE', __FILE__ );
 define( 'REUNION_REG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'REUNION_REG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
