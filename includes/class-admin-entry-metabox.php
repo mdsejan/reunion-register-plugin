@@ -103,6 +103,11 @@ class Reunion_Reg_Admin_Entry_Metabox {
         wp_nonce_field( 'reunion_reg_manual_entry_save', 'reunion_reg_manual_entry_nonce' );
         echo '<p style="color:#666;">Use this form to record a registration collected offline (cash, hand-to-hand bKash/Nagad, etc). It will be marked <strong>Approved</strong> automatically when published, a Registration ID will be generated, and a confirmation email will be sent.</p>';
         echo '<table class="form-table"><tbody>';
+        // Offline Serial — standalone top-level, always visible and required regardless of payment method
+        echo '<tr><th style="width:180px;text-align:left;"><label for="reunion_manual_offline_serial">অফলাইন সিরিয়াল নম্বর <span style="color:#d63638;">*</span></label></th><td>';
+        echo '<input type="text" name="reunion_manual_offline_serial" id="reunion_manual_offline_serial" style="min-width:280px;" placeholder="অফলাইন রসিদ/বইয়ের সিরিয়াল নম্বর" required>';
+        echo '<p class="description">ম্যানুয়াল রসিদ বইয়ের সিরিয়াল (প্রতিটি অফলাইন এন্ট্রির জন্য আবশ্যক)</p>';
+        echo '</td></tr>';
 
         foreach ( $fields as $key => $field ) {
             if ( 'file' === $field['type'] && 'applicant_photo' !== $key ) { continue; }
@@ -114,8 +119,8 @@ class Reunion_Reg_Admin_Entry_Metabox {
 
             // Backend-only: payment_channel includes Cash and custom provider/sender/serial/txid handling
             if ( 'payment_channel' === $key ) {
-                $options = array( 'মোবাইল ব্যাংকিং', 'ব্যাংক একাউন্ট', 'Cash' );
-                $default = isset( $field['default'] ) ? $field['default'] : 'মোবাইল ব্যাংকিং';
+                $options = array( 'Cash', 'মোবাইল ব্যাংকিং', 'ব্যাংক একাউন্ট' );
+                $default = 'Cash';
                 echo '<tr><th style="width:180px;text-align:left;"><label>' . esc_html( $field['label'] ) . ' <span style="color:#d63638;">*</span></label></th><td>';
                 foreach ( $options as $opt ) {
                     $checked = checked( $default, $opt, false );
@@ -134,16 +139,12 @@ class Reunion_Reg_Admin_Entry_Metabox {
                 echo '<input type="text" name="reunion_manual_sender_mobile" id="reunion_manual_sender_mobile" style="min-width:280px;" placeholder="যে নাম্বার থেকে টাকা পাঠানো হয়েছে">';
                 echo '</td></tr>';
 
-                // Offline serial — always visible, distinct
-                echo '<tr><th style="width:180px;text-align:left;"><label for="reunion_manual_offline_serial">অফলাইন সিরিয়াল নম্বর</label></th><td>';
-                echo '<input type="text" name="reunion_manual_offline_serial" id="reunion_manual_offline_serial" style="min-width:280px;" placeholder="অফলাইন রসিদ/বইয়ের সিরিয়াল নম্বর">';
-                echo '<p class="description">ম্যানুয়াল রসিদ বইয়ের সিরিয়াল ট্র্যাক করতে</p>';
-                echo '</td></tr>';
+                // Offline serial was already rendered as top-level field above the loop.
 
-                // TxID — required unless Cash
-                echo '<tr class="reunion-manual-txid-row" data-required-if-not-field="payment_channel" data-required-if-not-value="Cash"><th style="width:180px;text-align:left;"><label for="reunion_manual_tnx_id">ট্রানজেকশন আইডি (TxID) <span class="reunion-txid-required" style="color:#d63638;">*</span></label></th><td>';
+                // TxID — hidden when Cash (auto-generated CASH- serial on save), visible only for Mobile Banking / Bank Account
+                echo '<tr class="reunion-manual-txid-row" style="display:none;" data-required-if-not-field="payment_channel" data-required-if-not-value="Cash"><th style="width:180px;text-align:left;"><label for="reunion_manual_tnx_id">ট্রানজেকশন আইডি (TxID) <span class="reunion-txid-required" style="color:#d63638;">*</span></label></th><td>';
                 echo '<input type="text" name="reunion_manual_tnx_id" id="reunion_manual_tnx_id" style="min-width:280px;" placeholder="যেমন: BKA3X7R9Z2">';
-                echo '<p class="description">Cash হলে খালি রাখা যাবে — স্বয়ংক্রিয়ভাবে CASH- সিরিয়াল তৈরি হবে।</p>';
+                echo '<p class="description reunion-txid-help" style="display:none;">Cash হলে খালি রাখা যাবে — স্বয়ংক্রিয়ভাবে CASH- সিরিয়াল তৈরি হবে।</p>';
                 echo '</td></tr>';
                 continue;
             }
@@ -205,12 +206,17 @@ class Reunion_Reg_Admin_Entry_Metabox {
                     var depF=txRow.getAttribute('data-required-if-not-field'), depV=txRow.getAttribute('data-required-if-not-value');
                     var cur=curValFor(depF);
                     var shouldRequire = cur !== depV;
+                    var isCash = cur === 'Cash';
+                    var showTx = !isCash;
+                    txRow.style.display = showTx ? '' : 'none';
                     var star=txRow.querySelector('.reunion-txid-required');
                     if(star) star.style.display = shouldRequire ? '' : 'none';
+                    var help=txRow.querySelector('.reunion-txid-help');
+                    if(help) help.style.display = isCash ? '' : 'none';
                     var input=document.getElementById('reunion_manual_tnx_id');
                     if(input){
-                        if(shouldRequire) input.setAttribute('required','required');
-                        else { input.removeAttribute('required'); input.removeAttribute('aria-invalid'); try{input.setCustomValidity('');}catch(e){} }
+                        if(shouldRequire) { input.setAttribute('required','required'); input.disabled=false; }
+                        else { input.removeAttribute('required'); input.removeAttribute('aria-invalid'); try{input.setCustomValidity('');}catch(e){} input.disabled=isCash; if(isCash) input.value=''; }
                     }
                 }
             }
