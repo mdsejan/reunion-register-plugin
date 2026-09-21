@@ -26,6 +26,9 @@ class Reunion_Reg_CSV_Export {
     }
 
     public function render_export_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'You do not have permission to access this page.' );
+        }
         $export_url = wp_nonce_url(
             admin_url( 'admin-post.php?action=reunion_reg_export_csv' ),
             'reunion_reg_export_csv'

@@ -22,6 +22,9 @@ class Reunion_Reg_Data_Reset {
     }
 
     public function render_reset_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'You do not have permission to access this page.' );
+        }
         global $wpdb;
 
         $counts = wp_count_posts( REUNION_REG_CPT_SLUG );

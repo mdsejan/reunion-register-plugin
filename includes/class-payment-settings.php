@@ -49,6 +49,9 @@ class Reunion_Reg_Payment_Settings {
     }
 
     public function render_payment_settings_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'You do not have permission to access this page.' );
+        }
         $settings = Reunion_Reg_Fields_Schema::get_payment_settings();
         ?>
         <div class="wrap">

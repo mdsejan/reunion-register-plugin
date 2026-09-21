@@ -14,10 +14,16 @@ class Reunion_Reg_Print_Reports {
             'edit.php?post_type=' . REUNION_REG_CPT_SLUG,
             'Print & Export Reports',
             'Print Reports',
-            'manage_options',
+            'edit_posts',
             'reunion-print-reports',
             array( $this, 'render_page' )
         );
+    }
+
+    private function check_access() {
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_die( 'You do not have permission to access this page.' );
+        }
     }
 
     private function get_approved_gift_data() {
@@ -91,6 +97,7 @@ class Reunion_Reg_Print_Reports {
     }
 
     public function render_page() {
+        $this->check_access();
         $rows    = $this->get_approved_gift_data();
         $data    = $this->compute_summary( $rows );
         $summary = $data['summary'];

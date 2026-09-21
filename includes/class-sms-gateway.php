@@ -135,6 +135,9 @@ class Reunion_Reg_SMS_Gateway {
     }
 
     public function render_sms_settings_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'You do not have permission to access this page.' );
+        }
         $settings = get_option( REUNION_REG_SMS_SETTINGS_OPTION, array() );
         ?>
         <div class="wrap">
