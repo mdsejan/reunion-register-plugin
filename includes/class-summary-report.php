@@ -23,6 +23,20 @@ class Reunion_Reg_Summary_Report {
     private function get_registration_stats() {
         global $wpdb;
 
+        $parking_count = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->posts} p
+             INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = %s
+             INNER JOIN {$wpdb->postmeta} ps ON ps.post_id = p.ID AND ps.meta_key = %s
+             WHERE p.post_type = %s
+               AND p.post_status = 'publish'
+               AND COALESCE(NULLIF(ps.meta_value,''),'pending') = 'approved'
+               AND pm.meta_value = %s",
+            '_reunion_parking_needed',
+            '_reunion_status',
+            REUNION_REG_CPT_SLUG,
+            'হ্যাঁ'
+        ) );
+
         $rows = $wpdb->get_results( $wpdb->prepare(
             "SELECT b.meta_value AS batch, COALESCE(NULLIF(s.meta_value,''),'pending') AS status, COUNT(*) AS cnt,
                     COALESCE(SUM(CAST(g.meta_value AS DECIMAL(10,2))),0) AS guests_sum,
@@ -50,6 +64,7 @@ class Reunion_Reg_Summary_Report {
             'total_guests'    => 0,
             'total_donation'  => 0,
             'total_collected' => 0,
+            'total_parking'   => $parking_count,
             'by_batch'        => array(),
         );
 
@@ -180,6 +195,10 @@ class Reunion_Reg_Summary_Report {
                 <div style="background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:18px 24px;">
                     <div style="font-size:13px;color:#646970;">Donation</div>
                     <div style="font-size:28px;font-weight:700;line-height:1.2;">&#2547;<?php echo esc_html( number_format( (float) $stats['total_donation'], 0, '.', ',' ) ); ?></div>
+                </div>
+                <div style="background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:18px 24px;">
+                    <div style="font-size:13px;color:#646970;">Total Parking</div>
+                    <div style="font-size:28px;font-weight:700;line-height:1.2;"><?php echo (int) $stats['total_parking']; ?></div>
                 </div>
                 <div style="background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:18px 24px;">
                     <div style="font-size:13px;color:#646970;">Total Collected</div>
