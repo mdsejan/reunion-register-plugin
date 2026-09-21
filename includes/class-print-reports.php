@@ -96,8 +96,167 @@ class Reunion_Reg_Print_Reports {
         );
     }
 
+    private function get_approved_batches() {
+        global $wpdb;
+
+        $batches = $wpdb->get_col( $wpdb->prepare(
+            "SELECT DISTINCT b.meta_value FROM {$wpdb->posts} p
+             INNER JOIN {$wpdb->postmeta} b ON b.post_id = p.ID AND b.meta_key = %s
+             INNER JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = %s
+             WHERE p.post_type = %s
+               AND p.post_status = 'publish'
+               AND COALESCE(NULLIF(s.meta_value,''),'pending') = 'approved'
+               AND b.meta_value != ''
+             ORDER BY CAST(b.meta_value AS UNSIGNED) ASC",
+            '_reunion_batch',
+            '_reunion_status',
+            REUNION_REG_CPT_SLUG
+        ) );
+
+        return $batches ? $batches : array();
+    }
+
+    private function get_gate_checkin_data( $batch_filter = '' ) {
+        global $wpdb;
+
+        $where_batch = '';
+        if ( $batch_filter ) {
+            $where_batch = $wpdb->prepare( " AND b.meta_value = %s", $batch_filter );
+        }
+
+        $rows = $wpdb->get_results( $wpdb->prepare(
+            "SELECT
+                p.ID,
+                b.meta_value AS batch,
+                r.meta_value AS reg_id,
+                n.meta_value AS full_name,
+                ph.meta_value AS phone,
+                g.meta_value AS gift_dress,
+                gc.meta_value AS guest_count,
+                pk.meta_value AS parking,
+                s.meta_value AS status
+            FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->postmeta} b ON b.post_id = p.ID AND b.meta_key = %s
+            INNER JOIN {$wpdb->postmeta} r ON r.post_id = p.ID AND r.meta_key = %s
+            INNER JOIN {$wpdb->postmeta} n ON n.post_id = p.ID AND n.meta_key = %s
+            INNER JOIN {$wpdb->postmeta} ph ON ph.post_id = p.ID AND ph.meta_key = %s
+            INNER JOIN {$wpdb->postmeta} g ON g.post_id = p.ID AND g.meta_key = %s
+            LEFT JOIN {$wpdb->postmeta} gc ON gc.post_id = p.ID AND gc.meta_key = %s
+            LEFT JOIN {$wpdb->postmeta} pk ON pk.post_id = p.ID AND pk.meta_key = %s
+            INNER JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = %s
+            WHERE p.post_type = %s
+              AND p.post_status = 'publish'
+              AND COALESCE(NULLIF(s.meta_value,''),'pending') = 'approved'
+              {$where_batch}
+            ORDER BY CAST(b.meta_value AS UNSIGNED) ASC, r.meta_value ASC",
+            '_reunion_batch',
+            '_reunion_reg_id',
+            '_reunion_full_name',
+            '_reunion_phone',
+            '_reunion_gift_dress',
+            '_reunion_guest_count',
+            '_reunion_parking_needed',
+            '_reunion_status',
+            REUNION_REG_CPT_SLUG
+        ), ARRAY_A );
+
+        return $rows ? $rows : array();
+    }
+
+    private function render_checkin_sheet( $batch_filter = '' ) {
+        $rows = $this->get_gate_checkin_data( $batch_filter );
+        $batches = $this->get_approved_batches();
+        $batch_labels = array();
+        foreach ( $batches as $b ) {
+            $batch_labels[ $b ] = $b;
+        }
+
+        if ( $batch_filter && isset( $batch_labels[ $batch_filter ] ) ) {
+            $batch_groups = array( $batch_filter => $rows );
+        } else {
+            $batch_groups = array();
+            foreach ( $rows as $row ) {
+                $b = $row['batch'] ?: '(ব্যাচ নেই)';
+                if ( ! isset( $batch_groups[ $b ] ) ) {
+                    $batch_groups[ $b ] = array();
+                }
+                $batch_groups[ $b ][] = $row;
+            }
+        }
+        ?>
+        <div class="reunion-print-wrap">
+            <div class="reunion-print-header">
+                <h1>Reunion Registration Gate Check-in Sheet</h1>
+                <button type="button" class="button button-primary reunion-print-btn" onclick="window.print()">Print Batch Check-in Sheet</button>
+            </div>
+
+            <?php if ( empty( $rows ) ) : ?>
+                <div class="reunion-gift-card">
+                    <p>এখনো অনুমোদিত রেজিস্ট্রেশন নেই।</p>
+                </div>
+            <?php else : ?>
+                <?php
+                $batch_idx = 0;
+                foreach ( $batch_groups as $batch_label => $entries ) :
+                    $batch_idx++;
+                    $total_members = count( $entries );
+                    $total_guests  = 0;
+                    foreach ( $entries as $e ) {
+                        $total_guests += (int) ( $e['guest_count'] ?? 0 );
+                    }
+                    $sl = 0;
+                ?>
+                    <div class="batch-page-block">
+                        <div class="reunion-gift-card">
+                            <h2>Batch: <?php echo esc_html( $batch_label ); ?></h2>
+                            <p style="margin:4px 0;color:#646970;">
+                                Total Approved Members: <strong><?php echo (int) $total_members; ?></strong>
+                                &nbsp;|&nbsp;
+                                Total Guests: <strong><?php echo (int) $total_guests; ?></strong>
+                            </p>
+                            <table class="widefat striped">
+                                <thead>
+                                    <tr>
+                                        <th>SL</th>
+                                        <th>Reg ID</th>
+                                        <th>Member Name</th>
+                                        <th>Mobile</th>
+                                        <th>Gift Size</th>
+                                        <th>Guests</th>
+                                        <th>Parking</th>
+                                        <th>Received &amp; Signature</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ( $entries as $entry ) :
+                                        $sl++;
+                                    ?>
+                                        <tr>
+                                            <td><?php echo (int) $sl; ?></td>
+                                            <td><strong><?php echo esc_html( $entry['reg_id'] ?? '—' ); ?></strong></td>
+                                            <td><?php echo esc_html( $entry['full_name'] ?? '—' ); ?></td>
+                                            <td><?php echo esc_html( $entry['phone'] ?? '—' ); ?></td>
+                                            <td><?php echo esc_html( $entry['gift_dress'] ?? '—' ); ?></td>
+                                            <td><?php echo (int) ( $entry['guest_count'] ?? 0 ); ?></td>
+                                            <td><?php echo esc_html( $entry['parking'] ?? '—' ); ?></td>
+                                            <td style="min-width:120px;height:40px;border:1px dashed #999;"></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
+            <p style="color:#646970;font-size:12px;margin-top:8px;">Generated: <?php echo esc_html( current_time( 'Y-m-d H:i' ) ); ?></p>
+        </div>
+        <?php
+    }
+
     public function render_page() {
         $this->check_access();
+
         $rows    = $this->get_approved_gift_data();
         $data    = $this->compute_summary( $rows );
         $summary = $data['summary'];
@@ -203,11 +362,11 @@ class Reunion_Reg_Print_Reports {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ( $matrix as $batch => $gifts ) :
+                                <?php foreach ( $matrix as $b => $gifts ) :
                                     $batch_total = array_sum( $gifts );
                                 ?>
                                     <tr>
-                                        <td><strong><?php echo esc_html( $batch ); ?></strong></td>
+                                        <td><strong><?php echo esc_html( $b ); ?></strong></td>
                                         <?php foreach ( $all_gifts as $gift ) : ?>
                                             <td><?php echo isset( $gifts[ $gift ] ) ? (int) $gifts[ $gift ] : '—'; ?></td>
                                         <?php endforeach; ?>

@@ -74,6 +74,7 @@ require_once REUNION_REG_PLUGIN_DIR . 'includes/class-payment-settings.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-csv-export.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-summary-report.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-print-reports.php';
+require_once REUNION_REG_PLUGIN_DIR . 'includes/class-gate-checkin.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-data-reset.php';
 
 /**
@@ -124,6 +125,7 @@ final class Reunion_Registration_Plugin {
         new Reunion_Reg_CSV_Export();
         new Reunion_Reg_Summary_Report();
         new Reunion_Reg_Print_Reports();
+        new Reunion_Reg_Gate_Checkin();
 
         // Maintenance.
         new Reunion_Reg_Data_Reset();
