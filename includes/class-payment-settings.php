@@ -44,6 +44,7 @@ class Reunion_Reg_Payment_Settings {
             'person3_name'     => isset( $input['person3_name'] ) ? sanitize_text_field( trim( $input['person3_name'] ) ) : '',
             'person3_number'   => isset( $input['person3_number'] ) ? sanitize_text_field( trim( $input['person3_number'] ) ) : '',
             'bank_details'     => isset( $input['bank_details'] ) ? sanitize_textarea_field( $input['bank_details'] ) : '',
+            'reg_end_datetime' => ( isset( $input['reg_end_datetime'] ) && ! empty( $input['reg_end_datetime'] ) ) ? date( 'Y-m-d H:i:s', strtotime( $input['reg_end_datetime'] ) ) : '',
             'terms_url'        => isset( $input['terms_url'] ) ? esc_url_raw( trim( $input['terms_url'] ) ) : '',
         );
     }
@@ -102,6 +103,13 @@ class Reunion_Reg_Payment_Settings {
                         <td>
                             <textarea id="bank_details" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[bank_details]" rows="4" class="large-text" placeholder="Bank name, account name, account number, branch..."><?php echo esc_textarea( $settings['bank_details'] ); ?></textarea>
                             <p class="description">Shown to visitors who choose "ব্যাংক একাউন্ট" as their payment method. Leave blank to show a "coming soon" message instead.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="reg_end_datetime">Registration Deadline</label></th>
+                        <td>
+                            <input type="datetime-local" id="reg_end_datetime" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[reg_end_datetime]" value="<?php echo esc_attr( ! empty( $settings['reg_end_datetime'] ) ? str_replace( ' ', 'T', $settings['reg_end_datetime'] ) : '' ); ?>">
+                            <p class="description">After this date/time the public registration form is hidden and submissions are blocked. Leave blank for no deadline (form stays open).</p>
                         </td>
                     </tr>
                     <tr>

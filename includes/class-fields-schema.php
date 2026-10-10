@@ -55,7 +55,7 @@ class Reunion_Reg_Fields_Schema {
                 'placeholder' => 'আপনার ফোন নম্বর লিখুন',
             ),
             'email'               => array(
-                'section' => 1, 'label' => 'ইমেইল ঠিকানা', 'type' => 'email', 'required' => true,
+                'section' => 1, 'label' => 'ইমেইল ঠিকানা (ঐচ্ছিক)', 'type' => 'email', 'required' => false,
                 'placeholder' => 'আপনার ইমেইল ঠিকানা লিখুন',
             ),
             'father_husband_name' => array(
@@ -183,6 +183,7 @@ class Reunion_Reg_Fields_Schema {
             'person3_name'     => 'Person 3',
             'person3_number'   => '',
             'bank_details'     => '',
+            'reg_end_datetime' => '',
             'terms_url'        => '',
         );
 

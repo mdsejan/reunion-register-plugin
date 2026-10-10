@@ -71,6 +71,21 @@ class Reunion_Reg_Form_Submission {
             wp_die( 'Security check failed. Please go back and try again.' );
         }
 
+        // Registration deadline: once past, reject any (crafted) submission (string compare in WP timezone).
+        $reg_settings = Reunion_Reg_Fields_Schema::get_payment_settings();
+        $raw_deadline = $reg_settings['reg_end_datetime'] ?? '';
+        if ( ! empty( $raw_deadline ) ) {
+            $deadline_formatted = str_replace( 'T', ' ', $raw_deadline );
+            $current_wp_time    = wp_date( 'Y-m-d H:i' );
+            if ( $current_wp_time >= $deadline_formatted ) {
+                if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+                    wp_send_json_error( array( 'message' => 'রেজিস্ট্রেশন সময়সীমা শেষ হয়ে গেছে। ধন্যবাদ!' ) );
+                }
+                wp_safe_redirect( add_query_arg( 'reunion_reg_status', 'closed', wp_get_referer() ?: home_url() ) );
+                exit;
+            }
+        }
+
         // Honeypot check: real users never fill this hidden field; bots often do.
         if ( ! empty( $_POST['reunion_website'] ) ) {
             // Silently pretend success so bots don't learn the honeypot was hit.

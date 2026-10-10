@@ -47,6 +47,23 @@ class Reunion_Reg_Frontend_Form {
         $values           = $this->get_current_form_values( $fields, $sticky );
         $payment_settings = Reunion_Reg_Fields_Schema::get_payment_settings();
 
+        // Registration deadline — if set and already past, hide the form (string compare in WP timezone).
+        $raw_deadline = $payment_settings['reg_end_datetime'] ?? '';
+        if ( ! empty( $raw_deadline ) ) {
+            $deadline_formatted = str_replace( 'T', ' ', $raw_deadline ); // e.g. "2026-10-10 02:53"
+            $current_wp_time    = wp_date( 'Y-m-d H:i' );                 // WP local time (UTC+6)
+            if ( $current_wp_time >= $deadline_formatted ) {
+                return "
+                <div class='reunion-reg-wrapper' style='max-width: 800px; margin: 40px auto; background: #ffffff; padding: 50px 30px; border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1);'>
+                    <div style='width: 60px; height: 60px; background: #fee2e2; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;'>
+                        <span style='font-size: 28px; color: #dc2626;'>⏰</span>
+                    </div>
+                    <h3 style='color: #1e293b; font-size: 24px; font-weight: 700; margin-bottom: 12px;'>রেজিস্ট্রেশন সময়সীমা শেষ!</h3>
+                    <p style='color: #64748b; font-size: 16px; margin: 0;'>শতবর্ষ উদ্যাপনে রেজিস্ট্রেশনের নির্ধারিত সময়সীমা পূর্ণ হয়েছে। আগ্রহের জন্য আপনাকে ধন্যবাদ!</p>
+                </div>";
+            }
+        }
+
         wp_enqueue_style( 'reunion-reg-frontend-form' );
         wp_enqueue_script( 'reunion-reg-frontend-form' );
         wp_localize_script( 'reunion-reg-frontend-form', 'ReunionRegConfig', array(
@@ -91,7 +108,8 @@ class Reunion_Reg_Frontend_Form {
                 <div class="reunion-reg-thankyou">
                     <div class="reunion-reg-thankyou-icon">✓</div>
                     <h2>ধন্যবাদ!</h2>
-                    <p><?php echo esc_html( $notice[1] ); ?></p>
+                    <p>শতবর্ষ উদ্যাপনে আপনার রেজিস্ট্রেশন আবেদনটি সফলভাবে জমা হয়েছে।</p>
+                    <p>আমরা আপনার পেমেন্ট তথ্যটি যাচাই করছি। যাচাই সম্পন্ন হলে শীঘ্রই আপনার মোবাইল নম্বরে নিশ্চিতকরণ SMS পৌঁছে যাবে। স্মৃতির মিলনমেলায় আপনাকে স্বাগত!</p>
                 </div>
             <?php elseif ( $notice ) : ?>
                 <div class="reunion-reg-notice reunion-reg-<?php echo esc_attr( $notice[0] ); ?>">
@@ -382,21 +400,8 @@ class Reunion_Reg_Frontend_Form {
         <div class="reunion-field-full reunion-conditional reunion-pay-instructions" data-depends-field="payment_channel" data-depends-value="ব্যাংক একাউন্ট" <?php echo $bank_visible ? '' : 'style="display:none;"'; ?>>
             <div class="reunion-pay-box reunion-pay-box-bank">
                 <p class="reunion-pay-box-title">🏦 ব্যাংক ট্রান্সফার নিয়মাবলী:</p>
-                <?php
-                $bank_pairs = array(
-                    array( 'label' => 'ব্যাংকের নাম', 'value' => 'ডাচ-বাংলা ব্যাংক পিএলসি' ),
-                    array( 'label' => 'অ্যাকাউন্ট নাম', 'value' => 'BKMHS Reunion & Alumni Associations' ),
-                    array( 'label' => 'অ্যাকাউন্ট নম্বর', 'value' => '125 43287 98341' ),
-                    array( 'label' => 'ব্রাঞ্চ', 'value' => 'বগুড়া শাখা, বগুড়া।' ),
-                );
-                ?>
                 <div class="reunion-bank-details">
-                    <?php foreach ( $bank_pairs as $pair ) : ?>
-                        <div class="reunion-bank-row">
-                            <span class="reunion-bank-label"><?php echo esc_html( $pair['label'] ); ?></span>
-                            <span class="reunion-bank-value"><?php echo esc_html( $pair['value'] ); ?></span>
-                        </div>
-                    <?php endforeach; ?>
+                    <?php echo ! empty( $settings['bank_details'] ) ? nl2br( esc_html( $settings['bank_details'] ) ) : '<p>ব্যাংক ট্রান্সফারের তথ্য শীঘ্রই যোগ হবে।</p>'; ?>
                 </div>
                 <p class="reunion-bank-hint">টাকা পাঠানোর পর ব্যাংকের নাম ও ট্রানজেকশন/রেফারেন্স নম্বর নিচে দিন।</p>
             </div>
