@@ -76,6 +76,9 @@ class Reunion_Reg_SMS_Gateway {
         update_post_meta( $post_id, '_reunion_sms_time', current_time( 'mysql' ) );
         update_post_meta( $post_id, '_reunion_sms_attempts', $attempts );
 
+        // Counters shown in the SMS Logs summary are cached briefly.
+        delete_transient( 'reunion_reg_sms_counts' );
+
         return $result;
     }
 
@@ -571,8 +574,221 @@ class Reunion_Reg_SMS_Gateway {
                 <input type="text" name="test_phone" class="regular-text" placeholder="01XXXXXXXXX" required>
                 <?php submit_button( 'Send Test SMS', 'secondary', 'submit', false ); ?>
             </form>
+
+            <?php $this->render_sms_logs_section(); ?>
         </div>
         <?php
+    }
+
+    /**
+     * SMS Logs section: summary counters, Reg ID/phone search, a paginated
+     * log table sorted by send time (newest first), and paginate_links().
+     */
+    private function render_sms_logs_section() {
+        $search   = isset( $_GET['sms_log_search'] ) ? sanitize_text_field( wp_unslash( $_GET['sms_log_search'] ) ) : '';
+        $per_page = isset( $_GET['sms_log_per_page'] ) ? absint( $_GET['sms_log_per_page'] ) : 50;
+        if ( ! in_array( $per_page, array( 20, 50 ), true ) ) {
+            $per_page = 50;
+        }
+        $paged = isset( $_GET['sms_log_page'] ) ? max( 1, absint( $_GET['sms_log_page'] ) ) : 1;
+
+        $counts = $this->get_sms_counts();
+        $logs   = $this->get_sms_logs( $per_page, $paged, $search );
+        $rows   = $logs['rows'];
+        $total  = $logs['total'];
+        $pages  = max( 1, (int) ceil( $total / $per_page ) );
+
+        $base_url = add_query_arg(
+            array( 'post_type' => REUNION_REG_CPT_SLUG, 'page' => 'reunion_reg_sms_settings' ),
+            admin_url( 'edit.php' )
+        );
+        ?>
+        <hr>
+        <h2>SMS Logs</h2>
+
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin:12px 0 20px;">
+            <div style="flex:1;min-width:180px;background:#f0f6ff;border:1px solid #c5d9f1;border-radius:8px;padding:14px;">
+                <div style="font-size:12px;color:#50575e;text-transform:uppercase;letter-spacing:.5px;">Total Sent</div>
+                <div style="font-size:26px;font-weight:700;color:#1e4620;"><?php echo esc_html( $counts['sent'] ); ?></div>
+            </div>
+            <div style="flex:1;min-width:180px;background:#fdecea;border:1px solid #f1c0bb;border-radius:8px;padding:14px;">
+                <div style="font-size:12px;color:#50575e;text-transform:uppercase;letter-spacing:.5px;">Total Failed</div>
+                <div style="font-size:26px;font-weight:700;color:#b32d2e;"><?php echo esc_html( $counts['failed'] ); ?></div>
+            </div>
+            <div style="flex:1;min-width:180px;background:#fff8e1;border:1px solid #f0dca0;border-radius:8px;padding:14px;">
+                <div style="font-size:12px;color:#50575e;text-transform:uppercase;letter-spacing:.5px;">Total Pending</div>
+                <div style="font-size:26px;font-weight:700;color:#8a6d3b;"><?php echo esc_html( $counts['pending'] ); ?></div>
+            </div>
+        </div>
+
+        <form method="get" action="<?php echo esc_url( admin_url( 'edit.php' ) ); ?>" style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="hidden" name="post_type" value="<?php echo esc_attr( REUNION_REG_CPT_SLUG ); ?>">
+            <input type="hidden" name="page" value="reunion_reg_sms_settings">
+            <input type="search" name="sms_log_search" value="<?php echo esc_attr( $search ); ?>" placeholder="Search by Reg ID or Phone" style="min-width:260px;">
+            <select name="sms_log_per_page">
+                <option value="20" <?php selected( $per_page, 20 ); ?>>20 per page</option>
+                <option value="50" <?php selected( $per_page, 50 ); ?>>50 per page</option>
+            </select>
+            <?php submit_button( 'Search', 'secondary', 'submit', false ); ?>
+            <?php if ( '' !== $search ) : ?>
+                <a href="<?php echo esc_url( $base_url ); ?>" class="button">Clear</a>
+            <?php endif; ?>
+        </form>
+
+        <table class="wp-list-table widefat fixed striped">
+            <thead>
+                <tr>
+                    <th style="width:22%;">Applicant Name</th>
+                    <th style="width:18%;">Reg ID</th>
+                    <th style="width:18%;">Phone Number</th>
+                    <th style="width:14%;">SMS Status</th>
+                    <th style="width:28%;">Sent Date/Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ( empty( $rows ) ) : ?>
+                    <tr><td colspan="5">No SMS records found.</td></tr>
+                <?php else : ?>
+                    <?php foreach ( $rows as $row ) : ?>
+                        <tr>
+                            <td><?php echo esc_html( $row->full_name !== null && $row->full_name !== '' ? $row->full_name : '—' ); ?></td>
+                            <td><?php echo $row->reg_id ? '<strong>' . esc_html( $row->reg_id ) . '</strong>' : '—'; ?></td>
+                            <td><?php echo esc_html( $row->phone !== null && $row->phone !== '' ? $row->phone : '—' ); ?></td>
+                            <td>
+                                <?php if ( 'sent' === $row->sms_status ) : ?>
+                                    <span style="display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600;background:#e6f4ea;color:#1e4620;">Success</span>
+                                <?php else : ?>
+                                    <span style="display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600;background:#fdecea;color:#b32d2e;">Failed</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo $row->sms_time ? esc_html( mysql2date( 'd M Y, g:i a', $row->sms_time ) ) : '—'; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+
+        <?php if ( $pages > 1 ) : ?>
+            <div class="tablenav" style="margin-top:12px;">
+                <div class="tablenav-pages">
+                    <?php
+                    echo wp_kses_post( paginate_links( array(
+                        'base'      => add_query_arg(
+                            array(
+                                'post_type'        => REUNION_REG_CPT_SLUG,
+                                'page'             => 'reunion_reg_sms_settings',
+                                'sms_log_search'   => $search,
+                                'sms_log_per_page' => $per_page,
+                                'sms_log_page'     => '%#%',
+                            ),
+                            admin_url( 'edit.php' )
+                        ),
+                        'format'    => '',
+                        'current'   => $paged,
+                        'total'     => $pages,
+                        'prev_text' => '«',
+                        'next_text' => '»',
+                        'type'      => 'plain',
+                    ) ) );
+                    ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <p style="color:#646970;margin-top:8px;">
+            <?php
+            $showing_from = $total ? ( ( $paged - 1 ) * $per_page + 1 ) : 0;
+            $showing_to   = min( $total, $paged * $per_page );
+            /* translators: 1: first record number, 2: last record number, 3: total records. */
+            echo esc_html( sprintf( 'Showing %1$d–%2$d of %3$d SMS records.', $showing_from, $showing_to, $total ) );
+            ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * Summary counters for the SMS log. Uses two direct aggregate $wpdb
+     * queries (no post objects fetched) and caches the result briefly.
+     */
+    private function get_sms_counts() {
+        global $wpdb;
+
+        $cached = get_transient( 'reunion_reg_sms_counts' );
+        if ( is_array( $cached ) && isset( $cached['sent'], $cached['failed'], $cached['pending'] ) ) {
+            return $cached;
+        }
+
+        $row = $wpdb->get_row( $wpdb->prepare(
+            "SELECT
+                SUM( CASE WHEN sms.meta_value = 'sent' THEN 1 ELSE 0 END ) AS sent,
+                SUM( CASE WHEN sms.meta_value = 'failed' THEN 1 ELSE 0 END ) AS failed
+             FROM {$wpdb->posts} p
+             INNER JOIN {$wpdb->postmeta} sms ON sms.post_id = p.ID AND sms.meta_key = '_reunion_sms_status'
+             WHERE p.post_type = %s AND p.post_status = 'publish'",
+            REUNION_REG_CPT_SLUG
+        ) );
+
+        // Pending = approved registrations that have never had an SMS attempt.
+        $pending = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->posts} p
+             INNER JOIN {$wpdb->postmeta} st ON st.post_id = p.ID AND st.meta_key = '_reunion_status' AND st.meta_value = 'approved'
+             LEFT JOIN {$wpdb->postmeta} sms ON sms.post_id = p.ID AND sms.meta_key = '_reunion_sms_status'
+             WHERE p.post_type = %s AND p.post_status = 'publish'
+               AND ( sms.meta_value IS NULL OR sms.meta_value = '' OR sms.meta_value = 'pending' )",
+            REUNION_REG_CPT_SLUG
+        ) );
+
+        $counts = array(
+            'sent'    => $row ? (int) $row->sent : 0,
+            'failed'  => $row ? (int) $row->failed : 0,
+            'pending' => $pending,
+        );
+
+        set_transient( 'reunion_reg_sms_counts', $counts, 2 * MINUTE_IN_SECONDS );
+
+        return $counts;
+    }
+
+    /**
+     * Paginated SMS log rows (newest first). Joins each post's meta once so
+     * no per-row get_post_meta() calls are needed. Returns rows + total count.
+     *
+     * @return array { rows: object[], total: int }
+     */
+    private function get_sms_logs( $per_page, $paged, $search ) {
+        global $wpdb;
+
+        $per_page = max( 1, (int) $per_page );
+        $paged    = max( 1, (int) $paged );
+        $offset   = ( $paged - 1 ) * $per_page;
+
+        $joins = "INNER JOIN {$wpdb->postmeta} sms ON sms.post_id = p.ID AND sms.meta_key = '_reunion_sms_status'
+            LEFT JOIN {$wpdb->postmeta} nm ON nm.post_id = p.ID AND nm.meta_key = '_reunion_full_name'
+            LEFT JOIN {$wpdb->postmeta} rg ON rg.post_id = p.ID AND rg.meta_key = '_reunion_reg_id'
+            LEFT JOIN {$wpdb->postmeta} ph ON ph.post_id = p.ID AND ph.meta_key = '_reunion_phone'
+            LEFT JOIN {$wpdb->postmeta} tm ON tm.post_id = p.ID AND tm.meta_key = '_reunion_sms_time'";
+
+        $where  = "WHERE p.post_type = %s AND p.post_status = 'publish'";
+        $params = array( REUNION_REG_CPT_SLUG );
+
+        if ( '' !== $search ) {
+            $like     = '%' . $wpdb->esc_like( $search ) . '%';
+            $where   .= ' AND ( rg.meta_value LIKE %s OR ph.meta_value LIKE %s )';
+            $params[] = $like;
+            $params[] = $like;
+        }
+
+        $from = "FROM {$wpdb->posts} p {$joins} {$where}";
+
+        $total = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) ' . $from, $params ) );
+
+        $sql = 'SELECT p.ID, nm.meta_value AS full_name, rg.meta_value AS reg_id, ph.meta_value AS phone, sms.meta_value AS sms_status, tm.meta_value AS sms_time '
+            . $from
+            . ' ORDER BY tm.meta_value DESC, p.ID DESC LIMIT %d OFFSET %d';
+
+        $rows = $wpdb->get_results( $wpdb->prepare( $sql, array_merge( $params, array( $per_page, $offset ) ) ) );
+
+        return array( 'rows' => $rows ? $rows : array(), 'total' => $total );
     }
 
 }
