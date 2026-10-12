@@ -19,9 +19,6 @@ class Reunion_Reg_SMS_Gateway {
     /** BulkSMSBD send endpoint (used when no API URL is saved in settings). */
     const DEFAULT_API_URL = 'http://bulksmsbd.net/api/smsapi';
 
-    /** BulkSMSBD balance endpoint. */
-    const BALANCE_API_URL = 'http://bulksmsbd.net/api/getBalanceApi';
-
     public function __construct() {
         add_action( 'reunion_reg_after_approve', array( $this, 'maybe_send_approval_sms' ), 10, 2 );
 
@@ -251,7 +248,7 @@ class Reunion_Reg_SMS_Gateway {
      * Default SMS template — shared by the message builder and the settings textarea.
      */
     private function default_template() {
-        return 'Dear {name}, Registration confirmed for Bagbari KM High School Centenary Celebration 2026. Reg ID: {reg_id}. Please keep this for check-in.';
+        return 'Dear {name}, reg confirmed for Bagbari KM High School Centenary \'26. Reg ID: {reg_id}. Keep this ID to show at gate check-in.';
     }
 
     // -----------------------------------------------------------------
@@ -567,16 +564,6 @@ class Reunion_Reg_SMS_Gateway {
 
             <hr>
 
-            <h2>Gateway Balance</h2>
-            <?php $balance = $this->get_balance(); ?>
-            <p>
-                <?php if ( ! empty( $balance['ok'] ) ) : ?>
-                    Current balance: <strong><?php echo esc_html( $balance['text'] ); ?></strong>
-                <?php else : ?>
-                    <span style="color:#b32d2e;">Could not retrieve balance: <?php echo esc_html( $balance['text'] ); ?></span>
-                <?php endif; ?>
-            </p>
-
             <h2>Send Test SMS</h2>
             <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                 <input type="hidden" name="action" value="reunion_reg_test_sms">
@@ -588,50 +575,4 @@ class Reunion_Reg_SMS_Gateway {
         <?php
     }
 
-    /**
-     * Fetch the current BulkSMSBD balance. Successful lookups are cached for
-     * a short while so the settings page doesn't hit the API on every load.
-     */
-    private function get_balance() {
-        $settings = get_option( REUNION_REG_SMS_SETTINGS_OPTION, array() );
-        $api_key  = isset( $settings['api_key'] ) ? trim( $settings['api_key'] ) : '';
-
-        if ( empty( $api_key ) ) {
-            return array( 'ok' => false, 'text' => 'API key not configured.' );
-        }
-
-        $cached = get_transient( 'reunion_reg_sms_balance' );
-        if ( is_array( $cached ) ) {
-            return $cached;
-        }
-
-        $response = wp_remote_get( add_query_arg( 'api_key', rawurlencode( $api_key ), self::BALANCE_API_URL ), array( 'timeout' => 15 ) );
-
-        if ( is_wp_error( $response ) ) {
-            return array( 'ok' => false, 'text' => $response->get_error_message() );
-        }
-
-        $body = trim( (string) wp_remote_retrieve_body( $response ) );
-        $data = json_decode( $body, true );
-
-        $text = '';
-        if ( is_array( $data ) ) {
-            if ( isset( $data['balance'] ) ) {
-                $text = (string) $data['balance'];
-            } elseif ( isset( $data['Balance'] ) ) {
-                $text = (string) $data['Balance'];
-            }
-        } elseif ( '' !== $body ) {
-            $text = $body;
-        }
-
-        if ( '' === $text ) {
-            return array( 'ok' => false, 'text' => 'Unexpected response from the balance API.' );
-        }
-
-        $result = array( 'ok' => true, 'text' => $text );
-        set_transient( 'reunion_reg_sms_balance', $result, 5 * MINUTE_IN_SECONDS );
-
-        return $result;
-    }
 }
