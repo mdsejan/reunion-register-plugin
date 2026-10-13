@@ -83,6 +83,7 @@
 .reunion-chip-bkash { background: #e2136e; }
 .reunion-chip-nagad { background: #f7941d; }
 .reunion-chip-rocket { background: #8c3494; }
+.reunion-chip-upay { background: #00857c; }
 
 .reunion-pay-persons { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 12px 0; }
 .reunion-pay-person { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; min-width: 0; overflow: hidden; }

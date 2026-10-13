@@ -178,10 +178,13 @@ class Reunion_Reg_Fields_Schema {
             'guest_fee'        => 500,
             'person1_name'     => 'Person 1',
             'person1_number'   => '',
+            'person1_gateways' => array( 'bkash', 'nagad', 'rocket' ),
             'person2_name'     => 'Person 2',
             'person2_number'   => '',
+            'person2_gateways' => array( 'bkash', 'nagad', 'rocket' ),
             'person3_name'     => 'Person 3',
             'person3_number'   => '',
+            'person3_gateways' => array( 'bkash', 'nagad', 'rocket' ),
             'bank_details'     => '',
             'reg_end_datetime' => '',
             'terms_url'        => '',
@@ -205,21 +208,69 @@ class Reunion_Reg_Fields_Schema {
         return $settings;
     }
 
-    public static function get_mobile_banking_method_options() {
-        $settings = self::get_payment_settings();
-        $persons = array(
-            array( 'label' => 'P1', 'number' => $settings['person1_number'] ),
-            array( 'label' => 'P2', 'number' => $settings['person2_number'] ),
-            array( 'label' => 'P3', 'number' => $settings['person3_number'] ),
+    /**
+     * The supported mobile-banking gateways, keyed by a stable slug used in
+     * option storage, the admin checkboxes, the dropdown option values, and
+     * the frontend badge CSS class (reunion-chip-{key}). Adding a gateway
+     * here is the only change required to make it configurable everywhere.
+     */
+    public static function get_gateways() {
+        return array(
+            'bkash'  => 'bKash',
+            'nagad'  => 'Nagad',
+            'rocket' => 'Rocket',
+            'upay'   => 'Upay',
         );
-        $gateways = array( 'বিকাশ', 'নগদ', 'রকেট' );
+    }
+
+    /**
+     * Normalized per-person payment config (label / number / active gateways),
+     * shared by the frontend renderer and the dropdown option builder so both
+     * always agree on which person + gateway pairs are actually available.
+     *
+     * @return array[] Each item: index, label, number, gateways (slugs).
+     */
+    public static function get_persons() {
+        $settings = self::get_payment_settings();
+        $gateways = array_keys( self::get_gateways() );
+        $persons  = array();
+
+        for ( $i = 1; $i <= 3; $i++ ) {
+            $label  = isset( $settings[ "person{$i}_name" ] ) ? trim( (string) $settings[ "person{$i}_name" ] ) : '';
+            $number = isset( $settings[ "person{$i}_number" ] ) ? trim( (string) $settings[ "person{$i}_number" ] ) : '';
+            $active = isset( $settings[ "person{$i}_gateways" ] ) ? (array) $settings[ "person{$i}_gateways" ] : array();
+
+            $persons[] = array(
+                'index'    => $i,
+                'label'    => '' !== $label ? $label : sprintf( 'Person %d', $i ),
+                'number'   => $number,
+                'gateways' => array_values( array_intersect( $gateways, array_map( 'strval', $active ) ) ),
+            );
+        }
+
+        return $persons;
+    }
+
+    /**
+     * Dropdown options for the public form: one entry per active
+     * person + gateway pair whose mobile number is set. Missing numbers and
+     * unchecked gateways are excluded entirely so visitors can never pick an
+     * unreachable payment destination.
+     */
+    public static function get_mobile_banking_method_options() {
+        $gateways = self::get_gateways();
         $options  = array();
 
-        foreach ( $persons as $person ) {
+        foreach ( self::get_persons() as $person ) {
             $digits = preg_replace( '/\D/', '', (string) $person['number'] );
-            $full   = $digits ?: '—';
-            foreach ( $gateways as $gw ) {
-                $options[] = sprintf( '%s - %s (%s)', $gw, $full, $person['label'] );
+            if ( '' === $digits ) {
+                continue;
+            }
+
+            foreach ( $person['gateways'] as $key ) {
+                if ( isset( $gateways[ $key ] ) ) {
+                    $options[] = sprintf( '%s - %s (%s)', $gateways[ $key ], $digits, $person['label'] );
+                }
             }
         }
 

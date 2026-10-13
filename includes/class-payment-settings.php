@@ -34,19 +34,38 @@ class Reunion_Reg_Payment_Settings {
     }
 
     public function sanitize_payment_settings( $input ) {
+        $allowed_gateways = array_keys( Reunion_Reg_Fields_Schema::get_gateways() );
+
         return array(
             'registration_fee' => isset( $input['registration_fee'] ) ? max( 0, (float) $input['registration_fee'] ) : 0,
             'guest_fee'        => isset( $input['guest_fee'] ) ? max( 0, (float) $input['guest_fee'] ) : 0,
             'person1_name'     => isset( $input['person1_name'] ) ? sanitize_text_field( trim( $input['person1_name'] ) ) : '',
             'person1_number'   => isset( $input['person1_number'] ) ? sanitize_text_field( trim( $input['person1_number'] ) ) : '',
+            'person1_gateways' => self::sanitize_gateways( $input, 'person1_gateways', $allowed_gateways ),
             'person2_name'     => isset( $input['person2_name'] ) ? sanitize_text_field( trim( $input['person2_name'] ) ) : '',
             'person2_number'   => isset( $input['person2_number'] ) ? sanitize_text_field( trim( $input['person2_number'] ) ) : '',
+            'person2_gateways' => self::sanitize_gateways( $input, 'person2_gateways', $allowed_gateways ),
             'person3_name'     => isset( $input['person3_name'] ) ? sanitize_text_field( trim( $input['person3_name'] ) ) : '',
             'person3_number'   => isset( $input['person3_number'] ) ? sanitize_text_field( trim( $input['person3_number'] ) ) : '',
+            'person3_gateways' => self::sanitize_gateways( $input, 'person3_gateways', $allowed_gateways ),
             'bank_details'     => isset( $input['bank_details'] ) ? sanitize_textarea_field( $input['bank_details'] ) : '',
             'reg_end_datetime' => ( isset( $input['reg_end_datetime'] ) && ! empty( $input['reg_end_datetime'] ) ) ? date( 'Y-m-d H:i:s', strtotime( $input['reg_end_datetime'] ) ) : '',
             'terms_url'        => isset( $input['terms_url'] ) ? esc_url_raw( trim( $input['terms_url'] ) ) : '',
         );
+    }
+
+    /**
+     * Keeps only the gateway slugs the plugin actually supports, so a tampered
+     * form can't inject arbitrary values into the stored option.
+     */
+    private static function sanitize_gateways( $input, $key, $allowed ) {
+        if ( empty( $input[ $key ] ) || ! is_array( $input[ $key ] ) ) {
+            return array();
+        }
+
+        $checked = array_map( 'sanitize_key', wp_unslash( $input[ $key ] ) );
+
+        return array_values( array_intersect( $allowed, $checked ) );
     }
 
     public function render_payment_settings_page() {
@@ -54,6 +73,8 @@ class Reunion_Reg_Payment_Settings {
             wp_die( 'You do not have permission to access this page.' );
         }
         $settings = Reunion_Reg_Fields_Schema::get_payment_settings();
+        $gateways = Reunion_Reg_Fields_Schema::get_gateways();
+        $option   = REUNION_REG_PAYMENT_SETTINGS_OPTION;
         ?>
         <div class="wrap">
             <h1>Payment & Fee Settings</h1>
@@ -72,32 +93,34 @@ class Reunion_Reg_Payment_Settings {
                         <td><input type="number" step="1" min="0" id="guest_fee" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[guest_fee]" value="<?php echo esc_attr( $settings['guest_fee'] ); ?>" class="regular-text"></td>
                     </tr>
                     <tr>
-                        <th colspan="2"><h3 style="margin: 1.2em 0 0.2em;">Mobile Banking — 3 Persons</h3><p class="description" style="margin:0;">Each number supports bKash / Nagad / Rocket (Personal). Shown on the frontend as a single compact row with gateway badges and one copy button per person.</p></th>
+                        <th colspan="2"><h3 style="margin: 1.2em 0 0.2em;">Mobile Banking — 3 Persons</h3><p class="description" style="margin:0;">Tick only the gateways each number actually supports. The public form shows badges and dropdown options strictly from these selections, and any person with an empty mobile number is hidden entirely.</p></th>
                     </tr>
-                    <tr>
-                        <th><label for="person1_name">Person 1 — Name / Label</label></th>
-                        <td><input type="text" id="person1_name" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person1_name]" value="<?php echo esc_attr( $settings['person1_name'] ); ?>" class="regular-text" placeholder="Person 1"></td>
-                    </tr>
-                    <tr>
-                        <th><label for="person1_number">Person 1 — Mobile Number</label></th>
-                        <td><input type="text" id="person1_number" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person1_number]" value="<?php echo esc_attr( $settings['person1_number'] ); ?>" class="regular-text" placeholder="01XXXXXXXXX"></td>
-                    </tr>
-                    <tr>
-                        <th><label for="person2_name">Person 2 — Name / Label</label></th>
-                        <td><input type="text" id="person2_name" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person2_name]" value="<?php echo esc_attr( $settings['person2_name'] ); ?>" class="regular-text" placeholder="Person 2"></td>
-                    </tr>
-                    <tr>
-                        <th><label for="person2_number">Person 2 — Mobile Number</label></th>
-                        <td><input type="text" id="person2_number" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person2_number]" value="<?php echo esc_attr( $settings['person2_number'] ); ?>" class="regular-text" placeholder="01XXXXXXXXX"></td>
-                    </tr>
-                    <tr>
-                        <th><label for="person3_name">Person 3 — Name / Label</label></th>
-                        <td><input type="text" id="person3_name" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person3_name]" value="<?php echo esc_attr( $settings['person3_name'] ); ?>" class="regular-text" placeholder="Person 3"></td>
-                    </tr>
-                    <tr>
-                        <th><label for="person3_number">Person 3 — Mobile Number</label></th>
-                        <td><input type="text" id="person3_number" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[person3_number]" value="<?php echo esc_attr( $settings['person3_number'] ); ?>" class="regular-text" placeholder="01XXXXXXXXX"></td>
-                    </tr>
+                    <?php for ( $i = 1; $i <= 3; $i++ ) :
+                        $name_key     = "person{$i}_name";
+                        $number_key   = "person{$i}_number";
+                        $gateways_key = "person{$i}_gateways";
+                        $active       = isset( $settings[ $gateways_key ] ) ? (array) $settings[ $gateways_key ] : array();
+                        ?>
+                        <tr>
+                            <th><label for="<?php echo esc_attr( $name_key ); ?>">Person <?php echo esc_html( $i ); ?> — Name / Label</label></th>
+                            <td><input type="text" id="<?php echo esc_attr( $name_key ); ?>" name="<?php echo esc_attr( $option ); ?>[<?php echo esc_attr( $name_key ); ?>]" value="<?php echo esc_attr( $settings[ $name_key ] ); ?>" class="regular-text" placeholder="Person <?php echo esc_attr( $i ); ?>"></td>
+                        </tr>
+                        <tr>
+                            <th><label for="<?php echo esc_attr( $number_key ); ?>">Person <?php echo esc_html( $i ); ?> — Mobile Number</label></th>
+                            <td><input type="text" id="<?php echo esc_attr( $number_key ); ?>" name="<?php echo esc_attr( $option ); ?>[<?php echo esc_attr( $number_key ); ?>]" value="<?php echo esc_attr( $settings[ $number_key ] ); ?>" class="regular-text" placeholder="01XXXXXXXXX"></td>
+                        </tr>
+                        <tr>
+                            <th>Person <?php echo esc_html( $i ); ?> — Active Gateways</th>
+                            <td>
+                                <?php foreach ( $gateways as $gw_key => $gw_label ) : ?>
+                                    <label style="display:inline-flex;align-items:center;gap:4px;margin-right:14px;">
+                                        <input type="checkbox" name="<?php echo esc_attr( $option ); ?>[<?php echo esc_attr( $gateways_key ); ?>][]" value="<?php echo esc_attr( $gw_key ); ?>" <?php checked( in_array( $gw_key, $active, true ) ); ?>>
+                                        <?php echo esc_html( $gw_label ); ?>
+                                    </label>
+                                <?php endforeach; ?>
+                            </td>
+                        </tr>
+                    <?php endfor; ?>
                     <tr>
                         <th><label for="bank_details">Bank Transfer Details</label></th>
                         <td>

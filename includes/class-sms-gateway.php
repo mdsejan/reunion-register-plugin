@@ -25,10 +25,11 @@ class Reunion_Reg_SMS_Gateway {
         add_action( 'admin_menu', array( $this, 'add_sms_settings_page' ) );
         add_action( 'admin_init', array( $this, 'register_sms_settings' ) );
 
-        // Registrations list: an "SMS" column right after Status + resend row action.
+        // Registrations list: an "SMS" column right after Status. The resend
+        // action intentionally lives only in the Edit-screen meta box, not in
+        // the hover row-action menu.
         add_filter( 'manage_' . REUNION_REG_CPT_SLUG . '_posts_columns', array( $this, 'add_sms_column' ), 20 );
         add_action( 'manage_' . REUNION_REG_CPT_SLUG . '_posts_custom_column', array( $this, 'render_sms_column' ), 10, 2 );
-        add_filter( 'post_row_actions', array( $this, 'add_resend_row_action' ), 20, 2 );
 
         // Edit screen: SMS Status side meta box.
         add_action( 'add_meta_boxes', array( $this, 'add_sms_meta_box' ) );
@@ -255,7 +256,7 @@ class Reunion_Reg_SMS_Gateway {
     }
 
     // -----------------------------------------------------------------
-    // Registrations list: SMS column + resend row action
+    // Registrations list: SMS column
     // -----------------------------------------------------------------
 
     public function add_sms_column( $columns ) {
@@ -292,30 +293,6 @@ class Reunion_Reg_SMS_Gateway {
         } else {
             echo '<span style="color:#646970;">Not sent</span>';
         }
-    }
-
-    public function add_resend_row_action( $actions, $post ) {
-        if ( ! $post || $post->post_type !== REUNION_REG_CPT_SLUG ) {
-            return $actions;
-        }
-
-        // Only offer resend for approved registrations (never rejected).
-        if ( 'approved' !== Reunion_Reg_CPT::get_status( $post->ID ) ) {
-            return $actions;
-        }
-
-        if ( ! current_user_can( 'edit_post', $post->ID ) ) {
-            return $actions;
-        }
-
-        $url = wp_nonce_url(
-            admin_url( 'admin-post.php?action=reunion_reg_resend_sms&post_id=' . $post->ID ),
-            'reunion_reg_resend_sms_' . $post->ID
-        );
-
-        $actions['reunion_resend_sms'] = '<a href="' . esc_url( $url ) . '" onclick="return confirm(\'Resend the approval SMS to this applicant?\');">Resend SMS</a>';
-
-        return $actions;
     }
 
     // -----------------------------------------------------------------
