@@ -100,18 +100,13 @@ class Reunion_Reg_Form_Submission {
             exit;
         }
 
-        // Rate limiting: max 3 submissions per IP per 10 minutes.
+        // Rate limiting: configurable max attempts per IP within the lockout
+        // window (Registrations → reCAPTCHA Settings → Rate Limiting). Attempts
+        // are tracked per-IP in a transient; the check counts this attempt.
         $ip = $this->get_client_ip();
-        if ( $ip ) {
-            $rate_key   = 'reunion_reg_rate_' . md5( $ip );
-            $rate_count = (int) get_transient( $rate_key );
-
-            if ( $rate_count >= 3 ) {
-                wp_safe_redirect( add_query_arg( 'reunion_reg_status', 'rate_limited', wp_get_referer() ?: home_url() ) );
-                exit;
-            }
-
-            set_transient( $rate_key, $rate_count + 1, 10 * MINUTE_IN_SECONDS );
+        if ( ! Reunion_Reg_Recaptcha::check_rate_limit( $ip ) ) {
+            wp_safe_redirect( add_query_arg( 'reunion_reg_status', 'rate_limited', wp_get_referer() ?: home_url() ) );
+            exit;
         }
 
         // Google reCAPTCHA v3 — only enforced when enabled + configured in admin.
