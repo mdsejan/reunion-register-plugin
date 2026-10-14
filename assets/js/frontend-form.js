@@ -437,6 +437,60 @@
         });
     }
 
+    // True while any upload's client-side compression promise is still pending.
+    function hasPendingUpload() {
+        for (var i = 0; i < UPLOAD_INPUT_IDS.length; i++) {
+            var el = document.getElementById(UPLOAD_INPUT_IDS[i]);
+            if (el && typeof el._reunionPending === 'function' && el._reunionPending()) return true;
+        }
+        return false;
+    }
+
+    // Google reCAPTCHA v3: on submit, execute the action and inject the token
+    // into the hidden field inside the form. Runs once per submission — after
+    // image optimization has finished (the upload handler re-submits), and the
+    // resulting re-submit is allowed straight through.
+    function wireRecaptcha() {
+        var cfg = window.ReunionRegConfig || {};
+        if (!cfg.recaptchaEnabled || !cfg.recaptchaSiteKey) return;
+
+        var form = document.querySelector('.reunion-reg-form');
+        if (!form || form._reunionRecaptchaWired) return;
+        form._reunionRecaptchaWired = true;
+
+        var tokenInput = document.getElementById('reunion_recaptcha_token');
+
+        form.addEventListener('submit', function (e) {
+            // Let the upload handlers finish compressing first; they re-submit.
+            if (hasPendingUpload()) return;
+            // Token already injected on a previous pass — allow native submit now.
+            if (form._reunionRecaptchaDone) return;
+            // API not available yet; don't trap the user (backend still enforces).
+            if (typeof grecaptcha === 'undefined' || typeof grecaptcha.execute !== 'function') return;
+
+            e.preventDefault();
+
+            var submitBtn = form.querySelector('[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            function resubmit() {
+                if (submitBtn) submitBtn.disabled = false;
+                if (typeof form.requestSubmit === 'function') form.requestSubmit(submitBtn || undefined);
+                else form.submit();
+            }
+
+            grecaptcha.ready(function () {
+                grecaptcha.execute(cfg.recaptchaSiteKey, { action: cfg.recaptchaAction || 'alumni_registration' })
+                    .then(function (token) {
+                        if (tokenInput) tokenInput.value = token;
+                        form._reunionRecaptchaDone = true;
+                        resubmit();
+                    })
+                    .catch(resubmit);
+            });
+        });
+    }
+
     document.addEventListener('click', function (e) {
         var target = e.target.closest('[data-copy-value]');
         if (!target || !target.closest('.reunion-pay-box')) return;
@@ -456,6 +510,7 @@
         syncConditionalFields();
         calcTotal();
         wireUploadCompression();
+        wireRecaptcha();
         document.querySelectorAll('input[name="payment_channel"]').forEach(function (radio) {
             radio.addEventListener('change', syncConditionalFields);
         });

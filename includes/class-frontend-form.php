@@ -66,9 +66,24 @@ class Reunion_Reg_Frontend_Form {
 
         wp_enqueue_style( 'reunion-reg-frontend-form' );
         wp_enqueue_script( 'reunion-reg-frontend-form' );
+
+        // Google reCAPTCHA v3 — the script is enqueued only when the admin
+        // enabled it with both keys saved, and only from here, so it loads on
+        // the registration page (where this shortcode renders) and nowhere else.
+        $recaptcha_enabled = Reunion_Reg_Recaptcha::is_enabled();
+        if ( $recaptcha_enabled ) {
+            if ( ! wp_script_is( Reunion_Reg_Recaptcha::SCRIPT_HANDLE, 'registered' ) ) {
+                wp_register_script( Reunion_Reg_Recaptcha::SCRIPT_HANDLE, Reunion_Reg_Recaptcha::get_api_url(), array(), null, true );
+            }
+            wp_enqueue_script( Reunion_Reg_Recaptcha::SCRIPT_HANDLE );
+        }
+
         wp_localize_script( 'reunion-reg-frontend-form', 'ReunionRegConfig', array(
-            'registrationFee' => (float) $payment_settings['registration_fee'],
-            'guestFee'        => (float) $payment_settings['guest_fee'],
+            'registrationFee'  => (float) $payment_settings['registration_fee'],
+            'guestFee'         => (float) $payment_settings['guest_fee'],
+            'recaptchaEnabled' => $recaptcha_enabled,
+            'recaptchaSiteKey' => $recaptcha_enabled ? Reunion_Reg_Recaptcha::get_settings()['site_key'] : '',
+            'recaptchaAction'  => 'alumni_registration',
         ) );
 
         $status_map = array(
@@ -80,6 +95,7 @@ class Reunion_Reg_Frontend_Form {
             'missing_fields'  => array( 'error', 'অনুগ্রহ করে সব আবশ্যক (*) ফিল্ড সঠিকভাবে পূরণ করে আবার চেষ্টা করুন।' ),
             'invalid_file'    => array( 'error', 'ছবি/রসিদের ফরম্যাট সঠিক নয়। অনুগ্রহ করে JPG, PNG বা WebP ফাইল আপলোড করুন।' ),
             'file_too_large'  => array( 'error', 'ছবি/রসিদ অনেক বড়। সর্বোচ্চ ২ MB পর্যন্ত অনুমোদিত। অনুগ্রহ করে ছোট/কম্প্রেস করা ছবি ব্যবহার করুন।' ),
+            'recaptcha_failed' => array( 'error', 'নিরাপত্তা যাচাই ব্যর্থ হয়েছে। অনুগ্রহ করে পেজটি রিফ্রেশ করে আবার চেষ্টা করুন।' ),
             'error'           => array( 'error', 'দুঃখিত, কিছু একটা সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।' ),
         );
 
@@ -130,6 +146,11 @@ class Reunion_Reg_Frontend_Form {
                         <input type="text" name="reunion_website" id="reunion_website" tabindex="-1" autocomplete="off">
                     </div>
                     <input type="hidden" name="reunion_form_loaded_at" value="<?php echo esc_attr( time() ); ?>">
+
+                    <?php if ( $recaptcha_enabled ) : ?>
+                        <!-- reCAPTCHA v3 token, injected by frontend-form.js before submit -->
+                        <input type="hidden" name="recaptcha_token" id="reunion_recaptcha_token" value="">
+                    <?php endif; ?>
 
                     <?php
                     $current_section = null;

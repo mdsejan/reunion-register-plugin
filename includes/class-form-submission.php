@@ -114,6 +114,16 @@ class Reunion_Reg_Form_Submission {
             set_transient( $rate_key, $rate_count + 1, 10 * MINUTE_IN_SECONDS );
         }
 
+        // Google reCAPTCHA v3 — only enforced when enabled + configured in admin.
+        // When disabled (or keys missing) this is bypassed completely.
+        if ( Reunion_Reg_Recaptcha::is_enabled() ) {
+            $recaptcha_token = isset( $_POST['recaptcha_token'] ) ? sanitize_text_field( wp_unslash( $_POST['recaptcha_token'] ) ) : '';
+            if ( ! Reunion_Reg_Recaptcha::verify_token( $recaptcha_token ) ) {
+                wp_safe_redirect( add_query_arg( 'reunion_reg_status', 'recaptcha_failed', wp_get_referer() ?: home_url() ) );
+                exit;
+            }
+        }
+
         $fields = Reunion_Reg_Fields_Schema::get_fields();
         $clean  = array();
         $pending_file_keys = array();

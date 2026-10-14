@@ -39,7 +39,7 @@ class Reunion_Reg_Fields_Schema {
         $education_levels = array( 'এসএসসি', '১০ম শ্রেণি', '৯ম শ্রেণি', '৮ম শ্রেণি', '৭ম শ্রেণি', '৬ষ্ঠ শ্রেণি' );
         $blood_groups      = array( 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-' );
         $professions       = array( 'চাকুরীজীবী', 'ব্যবসায়ী', 'গৃহিণী', 'কৃষক', 'অবসরপ্রাপ্ত', 'ছাত্র/ছাত্রী', 'প্রবাসী', 'অন্যান্য' );
-        $gift_options      = array( 'T-Shirt (S)', 'T-Shirt (M)', 'T-Shirt (L)', 'T-Shirt (XL)', 'T-Shirt (XXL)', 'শাড়ি (Sari)' );
+        $gift_options      = array( 'T-Shirt (S)', 'T-Shirt (M)', 'T-Shirt (L)', 'T-Shirt (XL)', 'T-Shirt (XXL)' );
         $payment_channels  = array( 'মোবাইল ব্যাংকিং', 'ব্যাংক একাউন্ট' );
         $mobile_methods    = self::get_mobile_banking_method_options();
 

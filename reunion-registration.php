@@ -54,6 +54,7 @@ define( 'REUNION_REG_ADMIN_ACTION_NONCE', 'reunion_reg_admin_action' );
 define( 'REUNION_REG_COUNTER_OPTION', 'reunion_reg_id_counter' );
 define( 'REUNION_REG_SMS_SETTINGS_OPTION', 'reunion_reg_sms_settings' );
 define( 'REUNION_REG_PAYMENT_SETTINGS_OPTION', 'reunion_reg_payment_settings' );
+define( 'REUNION_REG_RECAPTCHA_SETTINGS_OPTION', 'reunion_reg_recaptcha_settings' );
 
 // ---------------------------------------------------------------------
 // Includes — order matters. Pure-data / registration modules first
@@ -71,6 +72,7 @@ require_once REUNION_REG_PLUGIN_DIR . 'includes/class-approval-workflow.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-email-notifications.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-sms-gateway.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-payment-settings.php';
+require_once REUNION_REG_PLUGIN_DIR . 'includes/class-recaptcha.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-csv-export.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-summary-report.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-print-reports.php';
@@ -120,6 +122,7 @@ final class Reunion_Registration_Plugin {
 
         // Settings pages.
         new Reunion_Reg_Payment_Settings();
+        new Reunion_Reg_Recaptcha();
 
         // Reporting.
         new Reunion_Reg_CSV_Export();
