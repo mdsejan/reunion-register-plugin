@@ -25,7 +25,7 @@ class Reunion_Reg_Approval_Workflow {
      * Returns the post_id on success, or wp_die()s on failure.
      */
     private function verify_admin_action_request() {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'edit_posts' ) ) {
             wp_die( 'You do not have permission to perform this action.' );
         }
 
@@ -33,6 +33,10 @@ class Reunion_Reg_Approval_Workflow {
 
         if ( ! $post_id || get_post_type( $post_id ) !== REUNION_REG_CPT_SLUG ) {
             wp_die( 'Invalid registration entry.' );
+        }
+
+        if ( ! current_user_can( 'edit_post', $post_id ) ) {
+            wp_die( 'You do not have permission to perform this action.' );
         }
 
         $nonce_action = REUNION_REG_ADMIN_ACTION_NONCE . '_' . $post_id;
@@ -109,7 +113,7 @@ class Reunion_Reg_Approval_Workflow {
      * or fill in data for manually-added offline entries, at any status.
      */
     public function handle_save_edit() {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'edit_posts' ) ) {
             wp_die( 'You do not have permission to perform this action.' );
         }
 
@@ -117,6 +121,10 @@ class Reunion_Reg_Approval_Workflow {
 
         if ( ! $post_id || get_post_type( $post_id ) !== REUNION_REG_CPT_SLUG ) {
             wp_die( 'Invalid registration entry.' );
+        }
+
+        if ( ! current_user_can( 'edit_post', $post_id ) ) {
+            wp_die( 'You do not have permission to perform this action.' );
         }
 
         $nonce = isset( $_POST['reunion_reg_edit_nonce'] ) ? $_POST['reunion_reg_edit_nonce'] : ( isset( $_GET['_wpnonce'] ) ? $_GET['_wpnonce'] : '' );

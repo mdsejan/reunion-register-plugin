@@ -413,7 +413,8 @@ class Reunion_Reg_Admin_Entry_Metabox {
     public function handle_manual_add_post_save( $post_id, $post, $update ) {
         if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) { return; }
         if ( ! isset( $_POST['reunion_reg_manual_entry_nonce'] ) || ! wp_verify_nonce( $_POST['reunion_reg_manual_entry_nonce'], 'reunion_reg_manual_entry_save' ) ) { return; }
-        if ( ! current_user_can( 'manage_options' ) ) { return; }
+        if ( ! current_user_can( 'edit_posts' ) ) { return; }
+        if ( ! current_user_can( 'edit_post', $post_id ) ) { return; }
         if ( ! empty( get_post_meta( $post_id, '_reunion_submitted_at', true ) ) ) { return; }
 
         $fields = Reunion_Reg_Fields_Schema::get_fields();
@@ -538,7 +539,7 @@ class Reunion_Reg_Admin_Entry_Metabox {
         if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) { return; }
         if ( get_post_type( $post_id ) !== REUNION_REG_CPT_SLUG ) { return; }
         if ( ! isset( $_POST['reunion_reg_edit_nonce'] ) || ! wp_verify_nonce( $_POST['reunion_reg_edit_nonce'], REUNION_REG_ADMIN_ACTION_NONCE . '_edit_' . $post_id ) ) { return; }
-        if ( ! current_user_can( 'edit_post', $post_id ) || ! current_user_can( 'manage_options' ) ) { return; }
+        if ( ! current_user_can( 'edit_post', $post_id ) ) { return; }
         $has_edit_field = false;
         foreach ( array_keys( Reunion_Reg_Fields_Schema::get_fields() ) as $k ) {
             if ( isset( $_POST[ 'reunion_edit_' . $k ] ) ) { $has_edit_field = true; break; }
