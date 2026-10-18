@@ -6,10 +6,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Approve/Reject workflow + the editable-entry save handler.
  *
- * This class has no idea email or SMS notifications exist. It only fires
+ * This class has no idea SMS notifications exist. It only fires
  * 'reunion_reg_after_approve' and 'reunion_reg_after_reject' — whatever
- * listens for those (class-email-notifications.php, class-sms-gateway.php)
- * is entirely their own business.
+ * listens for those (class-sms-gateway.php) is entirely their own business.
  */
 class Reunion_Reg_Approval_Workflow {
 
@@ -76,6 +75,8 @@ class Reunion_Reg_Approval_Workflow {
         update_post_meta( $post_id, '_reunion_reg_id', $reg_id );
         update_post_meta( $post_id, '_reunion_approved_at', current_time( 'mysql' ) );
 
+        self::record_status_change( $post_id, 'approved' );
+
         do_action( 'reunion_reg_after_approve', $post_id, $reg_id );
 
         wp_safe_redirect( add_query_arg( 'reunion_admin_notice', 'approved', wp_get_referer() ?: admin_url( 'edit.php?post_type=' . REUNION_REG_CPT_SLUG ) ) );
@@ -101,6 +102,8 @@ class Reunion_Reg_Approval_Workflow {
 
         update_post_meta( $post_id, '_reunion_status', 'rejected' );
         update_post_meta( $post_id, '_reunion_rejected_at', current_time( 'mysql' ) );
+
+        self::record_status_change( $post_id, 'rejected' );
 
         do_action( 'reunion_reg_after_reject', $post_id );
 
@@ -176,6 +179,41 @@ class Reunion_Reg_Approval_Workflow {
     }
 
     /**
+     * Record who last changed the status and when (post meta), and mirror the
+     * event into Simple History when that plugin is active. Shared by the
+     * Approve/Reject handlers here and the manual-entry auto-approval in the
+     * meta box, so approval provenance is captured no matter which path is used.
+     */
+    public static function record_status_change( $post_id, $status ) {
+        $user = wp_get_current_user();
+        $time = current_time( 'mysql' );
+
+        update_post_meta( $post_id, '_approved_by_user_id', (int) $user->ID );
+        update_post_meta( $post_id, '_approved_by_user_name', $user->display_name );
+        update_post_meta( $post_id, '_approved_at_time', $time );
+
+        $reg_id     = get_post_meta( $post_id, '_reunion_reg_id', true );
+        $reg_label  = $reg_id ? $reg_id : '#' . (int) $post_id;
+        $status_lbl = ( 'rejected' === $status ) ? 'Rejected' : 'Approved';
+        $message    = sprintf( 'Registration %s status changed to %s by %s', $reg_label, $status_lbl, $user->display_name );
+
+        $context = array(
+            'post_id'         => (int) $post_id,
+            'registration_id' => $reg_label,
+            'status'          => $status,
+            'user_id'         => (int) $user->ID,
+        );
+
+        // Simple History: prefer its SimpleLogger() API; fall back to the
+        // 'simple_history_log' hook for setups that integrate that way.
+        if ( function_exists( 'SimpleLogger' ) ) {
+            SimpleLogger()->info( $message, $context );
+        } elseif ( has_filter( 'simple_history_log' ) ) {
+            do_action( 'simple_history_log', $message, $context );
+        }
+    }
+
+    /**
      * Admin notices shown after approve/reject redirect.
      */
     public function show_admin_notices() {
@@ -185,8 +223,8 @@ class Reunion_Reg_Approval_Workflow {
 
         $notice = sanitize_text_field( $_GET['reunion_admin_notice'] );
         $map = array(
-            'approved'          => array( 'success', 'Registration approved. Confirmation email sent.' ),
-            'rejected'          => array( 'success', 'Registration rejected. Notification email sent.' ),
+            'approved'          => array( 'success', 'Registration approved.' ),
+            'rejected'          => array( 'success', 'Registration rejected.' ),
             'already_approved'  => array( 'warning', 'This entry was already approved.' ),
             'already_processed' => array( 'warning', 'This entry has already been processed.' ),
             'saved'             => array( 'success', 'Changes saved successfully.' ),

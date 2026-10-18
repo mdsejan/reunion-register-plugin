@@ -51,6 +51,7 @@ class Reunion_Reg_Payment_Settings {
             'bank_details'     => isset( $input['bank_details'] ) ? sanitize_textarea_field( $input['bank_details'] ) : '',
             'reg_end_datetime' => ( isset( $input['reg_end_datetime'] ) && ! empty( $input['reg_end_datetime'] ) ) ? date( 'Y-m-d H:i:s', strtotime( $input['reg_end_datetime'] ) ) : '',
             'terms_url'        => isset( $input['terms_url'] ) ? esc_url_raw( trim( $input['terms_url'] ) ) : '',
+            'require_english_name' => ! empty( $input['require_english_name'] ) ? 1 : 0,
         );
     }
 
@@ -91,6 +92,19 @@ class Reunion_Reg_Payment_Settings {
                     <tr>
                         <th><label for="guest_fee">Guest Fee (৳ per additional guest)</label></th>
                         <td><input type="number" step="1" min="0" id="guest_fee" name="<?php echo esc_attr( REUNION_REG_PAYMENT_SETTINGS_OPTION ); ?>[guest_fee]" value="<?php echo esc_attr( $settings['guest_fee'] ); ?>" class="regular-text"></td>
+                    </tr>
+                    <tr>
+                        <th colspan="2"><h3 style="margin: 1.2em 0 0.2em;">Form Validation</h3></th>
+                    </tr>
+                    <tr>
+                        <th><label for="require_english_name">Require English-only Name</label></th>
+                        <td>
+                            <label style="display:inline-flex;align-items:center;gap:6px;">
+                                <input type="checkbox" id="require_english_name" name="<?php echo esc_attr( $option ); ?>[require_english_name]" value="1" <?php checked( ! empty( $settings['require_english_name'] ) ); ?>>
+                                Enable — reject Bangla / non-English characters in the public form's Name field
+                            </label>
+                            <p class="description" style="margin-top:6px;">When enabled, "নাম" accepts only English letters, spaces, dots, apostrophes, and hyphens (e.g. "Md. Rakib Hasan"). Leave off to allow Bangla names.</p>
+                        </td>
                     </tr>
                     <tr>
                         <th colspan="2"><h3 style="margin: 1.2em 0 0.2em;">Mobile Banking — 3 Persons</h3><p class="description" style="margin:0;">Tick only the gateways each number actually supports. The public form shows badges and dropdown options strictly from these selections, and any person with an empty mobile number is hidden entirely.</p></th>

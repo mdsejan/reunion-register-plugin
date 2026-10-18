@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Reunion Registration Form
- * Description: Registration form with manual payment verification (bKash/Nagad/Rocket + Transaction ID), admin Approve/Reject workflow, auto-generated Registration ID (Batch-Number format), email confirmations, SMS notifications, CSV export, and a Summary dashboard.
- * Version: 3.0.0
+ * Description: Registration form with manual payment verification (bKash/Nagad/Rocket + Transaction ID), admin Approve/Reject workflow, auto-generated Registration ID (Batch-Number format), SMS notifications, CSV export, and a Summary dashboard.
+ * Version: 3.1.1
  * Author: Sejan
  * Text Domain: reunion-registration
  * Domain Path: /languages
@@ -16,11 +16,11 @@
  *
  * Modules never call each other's methods directly. They communicate only
  * through WordPress hooks (do_action / apply_filters). For example, the
- * approval workflow (class-approval-workflow.php) has no idea the email
- * or SMS classes exist — it just fires 'reunion_reg_after_approve', and
- * class-email-notifications.php + class-sms-gateway.php each independently
- * listen for that hook in their own constructors. This means any module
- * can be disabled, replaced, or extended without touching any other file.
+ * approval workflow (class-approval-workflow.php) has no idea the SMS
+ * class exists — it just fires 'reunion_reg_after_approve', and
+ * class-sms-gateway.php listens for that hook in its own constructor.
+ * This means any module can be disabled, replaced, or extended without
+ * touching any other file.
  * ---------------------------------------------------------------------
  */
 
@@ -33,7 +33,7 @@ if ( ! function_exists( 'get_plugin_data' ) ) {
     require_once ABSPATH . 'wp-admin/includes/plugin.php';
 }
 $_reunion_reg_header = get_plugin_data( __FILE__, false, false );
-$_reunion_reg_version = ! empty( $_reunion_reg_header['Version'] ) ? $_reunion_reg_header['Version'] : '3.0.0';
+$_reunion_reg_version = ! empty( $_reunion_reg_header['Version'] ) ? $_reunion_reg_header['Version'] : '3.1.1';
 
 // ---------------------------------------------------------------------
 // Plugin-wide constants — the single source of truth for every include
@@ -69,7 +69,6 @@ require_once REUNION_REG_PLUGIN_DIR . 'includes/class-form-submission.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-admin-list-table.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-admin-entry-metabox.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-approval-workflow.php';
-require_once REUNION_REG_PLUGIN_DIR . 'includes/class-email-notifications.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-sms-gateway.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-payment-settings.php';
 require_once REUNION_REG_PLUGIN_DIR . 'includes/class-recaptcha.php';
@@ -113,11 +112,8 @@ final class Reunion_Registration_Plugin {
         new Reunion_Reg_Admin_Entry_Metabox();
         new Reunion_Reg_Approval_Workflow();
 
-        // Notification channels. Each one independently hooks itself onto
-        // 'reunion_reg_after_approve' / 'reunion_reg_after_reject' inside its
-        // own constructor — the approval workflow above never calls these,
-        // and neither of these two classes knows the other exists.
-        new Reunion_Reg_Email_Notifications();
+        // Notification channel: SMS hooks itself onto 'reunion_reg_after_approve'
+        // inside its own constructor — the approval workflow above never calls it.
         new Reunion_Reg_SMS_Gateway();
 
         // Settings pages.

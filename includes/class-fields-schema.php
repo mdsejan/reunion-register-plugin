@@ -43,13 +43,24 @@ class Reunion_Reg_Fields_Schema {
         $payment_channels  = array( 'মোবাইল ব্যাংকিং', 'ব্যাংক একাউন্ট' );
         $mobile_methods    = self::get_mobile_banking_method_options();
 
+        // Name field — optionally restricted to English letters only, driven by the
+        // "Require English-only Name" toggle in Payment & Fee Settings. When enabled,
+        // the HTML5 pattern blocks non-English input client-side (the browser shows
+        // pattern_error via the input's title), and the submission handler enforces
+        // the same rule server-side.
+        $full_name_field = array(
+            'section' => 1, 'label' => 'নাম', 'type' => 'text', 'required' => true,
+            'placeholder' => 'আপনার নাম লিখুন',
+        );
+        if ( self::require_english_name() ) {
+            $full_name_field['pattern']       = '[A-Za-z\s.\'\\-]+';
+            $full_name_field['pattern_error'] = 'নাম শুধুমাত্র ইংরেজিতে লিখুন (English letters only)';
+        }
+
         return array(
 
             // ---------- ১. ব্যক্তিগত বিবরণ ----------
-            'full_name'           => array(
-                'section' => 1, 'label' => 'নাম', 'type' => 'text', 'required' => true,
-                'placeholder' => 'আপনার নাম লিখুন',
-            ),
+            'full_name'           => $full_name_field,
             'phone'               => array(
                 'section' => 1, 'label' => 'মোবাইল নম্বর', 'type' => 'tel', 'required' => true,
                 'placeholder' => 'আপনার ফোন নম্বর লিখুন',
@@ -188,6 +199,7 @@ class Reunion_Reg_Fields_Schema {
             'bank_details'     => '',
             'reg_end_datetime' => '',
             'terms_url'        => '',
+            'require_english_name' => false,
         );
 
         $settings = wp_parse_args( get_option( REUNION_REG_PAYMENT_SETTINGS_OPTION, array() ), $defaults );
@@ -206,6 +218,15 @@ class Reunion_Reg_Fields_Schema {
         }
 
         return $settings;
+    }
+
+    /**
+     * Whether the public form's Name field is restricted to English letters only.
+     * Controlled by the "Require English-only Name" toggle in Payment & Fee Settings.
+     */
+    public static function require_english_name() {
+        $settings = self::get_payment_settings();
+        return ! empty( $settings['require_english_name'] );
     }
 
     /**

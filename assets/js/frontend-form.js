@@ -491,6 +491,72 @@
         });
     }
 
+    // Name field: when the admin enabled "Require English-only Name", strip any
+    // non-English characters as they are typed, show an inline message, and block
+    // submission if a non-English value somehow slips past the live filter.
+    function wireEnglishNameField() {
+        var input = document.getElementById('reunion_full_name');
+        if (!input || !input.getAttribute('pattern')) return;
+        var errorEl = document.getElementById('reunion_full_name_error');
+        var INLINE_MSG = 'শুধুমাত্র ইংরেজি অক্ষর গ্রহণযোগ্য (Only English characters allowed)';
+        var SUBMIT_MSG = 'অনুগ্রহ করে আপনার নাম ইংরেজিতে লিখুন';
+        var disallowed = /[^A-Za-z\s.'-]/g;
+        var fullMatch = new RegExp('^(?:' + input.getAttribute('pattern') + ')$');
+
+        function isValid(v) { return v === '' || fullMatch.test(v); }
+
+        function showError(msg) {
+            if (errorEl) { errorEl.textContent = escText(msg); errorEl.hidden = false; }
+            input.setAttribute('aria-invalid', 'true');
+            input.classList.add('reunion-input-invalid');
+        }
+
+        function clearError() {
+            if (errorEl) { errorEl.hidden = true; errorEl.textContent = ''; }
+            input.removeAttribute('aria-invalid');
+            input.classList.remove('reunion-input-invalid');
+        }
+
+        function refreshValidity() {
+            try { input.setCustomValidity(isValid(input.value) ? '' : SUBMIT_MSG); } catch (e) {}
+        }
+
+        input.addEventListener('input', function () {
+            var original = input.value;
+            var cleaned = original.replace(disallowed, '');
+            if (cleaned !== original) {
+                var caret = input.selectionStart;
+                input.value = cleaned;
+                if (typeof caret === 'number') {
+                    var pos = Math.max(0, caret - (original.length - cleaned.length));
+                    try { input.setSelectionRange(pos, pos); } catch (e) {}
+                }
+                showError(INLINE_MSG);
+            } else if (isValid(cleaned)) {
+                clearError();
+            }
+            refreshValidity();
+        });
+
+        // Fires when the browser blocks submission on the pattern attribute (e.g. a
+        // value set outside the live filter) — surface our own message too.
+        input.addEventListener('invalid', function () {
+            showError(SUBMIT_MSG);
+        });
+
+        var form = input.closest('form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                refreshValidity();
+                if (isValid(input.value)) { clearError(); return; }
+                e.preventDefault();
+                showError(SUBMIT_MSG);
+                try { input.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (err) { try { input.scrollIntoView(); } catch (e2) {} }
+                try { input.focus(); } catch (err) {}
+            });
+        }
+    }
+
     document.addEventListener('click', function (e) {
         var target = e.target.closest('[data-copy-value]');
         if (!target || !target.closest('.reunion-pay-box')) return;
@@ -511,6 +577,7 @@
         calcTotal();
         wireUploadCompression();
         wireRecaptcha();
+        wireEnglishNameField();
         document.querySelectorAll('input[name="payment_channel"]').forEach(function (radio) {
             radio.addEventListener('change', syncConditionalFields);
         });

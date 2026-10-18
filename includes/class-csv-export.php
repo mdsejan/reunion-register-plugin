@@ -172,6 +172,14 @@ class Reunion_Reg_CSV_Export {
         }
         $header_row[] = 'Submitted At';
         $header_row[] = 'Approved At';
+
+        // Approval provenance columns are exported only for administrators.
+        $is_admin_export = current_user_can( 'manage_options' );
+        if ( $is_admin_export ) {
+            $header_row[] = 'Approved By';
+            $header_row[] = 'Approval Time';
+        }
+
         fputcsv( $output, $header_row );
 
         foreach ( $entries as $entry ) {
@@ -197,6 +205,10 @@ class Reunion_Reg_CSV_Export {
             }
             $row[] = get_post_meta( $entry->ID, '_reunion_submitted_at', true );
             $row[] = get_post_meta( $entry->ID, '_reunion_approved_at', true );
+            if ( $is_admin_export ) {
+                $row[] = get_post_meta( $entry->ID, '_approved_by_user_name', true );
+                $row[] = get_post_meta( $entry->ID, '_approved_at_time', true );
+            }
 
             $row = array_map( array( $this, 'csv_safe_value' ), $row );
 

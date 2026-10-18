@@ -123,6 +123,7 @@ class Reunion_Reg_Form_Submission {
         $clean  = array();
         $pending_file_keys = array();
         $has_missing_required = false;
+        $has_invalid_name = false;
 
         foreach ( $fields as $key => $field ) {
 
@@ -168,6 +169,14 @@ class Reunion_Reg_Form_Submission {
                 $value = ( 'number' === $field['type'] ) ? 0 : '';
             } elseif ( ! empty( $field['required'] ) && ( '' === $value || null === $value ) ) {
                 $has_missing_required = true;
+            }
+
+            // English-only Name enforcement (toggle in Payment & Fee Settings):
+            // when enabled, reject Bangla / non-English characters server-side.
+            if ( $is_applicable && 'full_name' === $key && '' !== $value
+                && Reunion_Reg_Fields_Schema::require_english_name()
+                && ! preg_match( '/^[A-Za-z\s\.\'-]+$/', $value ) ) {
+                $has_invalid_name = true;
             }
 
             $clean[ $key ] = $value;
@@ -230,6 +239,10 @@ class Reunion_Reg_Form_Submission {
                     $this->redirect_with_retry( 'file_too_large', array() );
                 }
             }
+        }
+
+        if ( $has_invalid_name ) {
+            $this->redirect_with_retry( 'invalid_name', $clean );
         }
 
         if ( $has_missing_required ) {

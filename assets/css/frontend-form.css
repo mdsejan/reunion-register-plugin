@@ -51,6 +51,7 @@
     box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.12);
 }
 .reunion-field select { appearance: auto; cursor: pointer; }
+.reunion-field input.reunion-input-invalid { border-color: #fca5a5; background: #fff1f2; }
 
 .reunion-radio-group { display: flex; flex-wrap: wrap; gap: 10px 22px; padding-top: 6px; }
 .reunion-radio-pill { display: inline-flex; align-items: center; gap: 7px; font-size: 15px; cursor: pointer; color: #374151; }
@@ -126,7 +127,8 @@
 .reunion-reg-file-status { margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: #1e8a3f; font-weight: 600; }
 .reunion-reg-file-status[aria-busy="true"] { color: #6b7280; }
 .reunion-reg-file-status[aria-busy="true"]::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 7px; vertical-align: -1px; border: 2px solid #d1d5db; border-top-color: #6b7280; border-radius: 50%; animation: reunion-reg-spin 0.85s linear infinite; }
-.reunion-reg-file-error { margin: 8px 0 0; font-size: 12px; line-height: 1.6; color: #b42318; font-weight: 600; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 10px; }
+.reunion-reg-file-error,
+.reunion-field-inline-error { margin: 8px 0 0; font-size: 12px; line-height: 1.6; color: #b42318; font-weight: 600; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 10px; }
 .reunion-file-input[aria-invalid="true"] ~ .reunion-file-control { border-color: #fca5a5; background: #fff1f2; }
 @keyframes reunion-reg-spin { to { transform: rotate(360deg); } }
 .reunion-reg-submit-btn:disabled { opacity: 0.62; cursor: wait; }

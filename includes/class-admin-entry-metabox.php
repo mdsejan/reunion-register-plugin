@@ -109,7 +109,7 @@ class Reunion_Reg_Admin_Entry_Metabox {
     public function render_manual_entry_meta_box( $post ) {
         $fields = Reunion_Reg_Fields_Schema::get_fields();
         wp_nonce_field( 'reunion_reg_manual_entry_save', 'reunion_reg_manual_entry_nonce' );
-        echo '<p style="color:#666;">Use this form to record a registration collected offline (cash, hand-to-hand bKash/Nagad, etc). It will be marked <strong>Approved</strong> automatically when published, a Registration ID will be generated, and a confirmation email will be sent.</p>';
+        echo '<p style="color:#666;">Use this form to record a registration collected offline (cash, hand-to-hand bKash/Nagad, etc). It will be marked <strong>Approved</strong> automatically when published, and a Registration ID will be generated.</p>';
         echo '<table class="form-table"><tbody>';
         // Offline Serial — standalone top-level, always visible and required regardless of payment method
         echo '<tr><th style="width:180px;text-align:left;"><label for="reunion_manual_offline_serial">অফলাইন সিরিয়াল নম্বর <span style="color:#d63638;">*</span></label></th><td>';
@@ -529,6 +529,7 @@ class Reunion_Reg_Admin_Entry_Metabox {
             update_post_meta( $post_id, '_reunion_status', 'approved' );
             update_post_meta( $post_id, '_reunion_reg_id', $reg_id );
             update_post_meta( $post_id, '_reunion_approved_at', current_time( 'mysql' ) );
+            Reunion_Reg_Approval_Workflow::record_status_change( $post_id, 'approved' );
             do_action( 'reunion_reg_after_approve', $post_id, $reg_id );
         } else {
             update_post_meta( $post_id, '_reunion_status', 'pending' );
@@ -592,6 +593,21 @@ class Reunion_Reg_Admin_Entry_Metabox {
         echo '<table class="form-table"><tbody>';
         echo '<tr><th style="width:180px;text-align:left;">Status</th><td>' . Reunion_Reg_CPT::status_badge_html( $status ) . '</td></tr>';
         echo '<tr><th style="text-align:left;">Registration ID</th><td>' . ( $reg_id ? '<strong>' . esc_html( $reg_id ) . '</strong>' : '<em>Not assigned yet (assigned on approval)</em>' ) . '</td></tr>';
+        // Approval provenance — administrators only, and only once the entry has
+        // actually been approved or rejected (never for pending/submitted entries).
+        if ( current_user_can( 'manage_options' ) && in_array( $status, array( 'approved', 'rejected' ), true ) ) {
+            $by_label = ( 'rejected' === $status ) ? 'Rejected By' : 'Approved By';
+            $at_label = ( 'rejected' === $status ) ? 'Rejected At' : 'Approved At';
+            $approver = get_post_meta( $post->ID, '_approved_by_user_name', true );
+            $time_raw = get_post_meta( $post->ID, '_approved_at_time', true );
+            // Stored as WP-local 'Y-m-d H:i:s'; mysql2date formats it in WP timezone
+            // without a double conversion (translate=false keeps English month/AM-PM).
+            $time_fmt = $time_raw ? mysql2date( 'd M Y, h:i A', $time_raw, false ) : '';
+            if ( '' !== $approver || '' !== $time_fmt ) {
+                echo '<tr><th style="text-align:left;">' . esc_html( $by_label ) . '</th><td>' . esc_html( '' !== $approver ? $approver : '—' ) . '</td></tr>';
+                echo '<tr><th style="text-align:left;">' . esc_html( $at_label ) . '</th><td>' . esc_html( '' !== $time_fmt ? $time_fmt : '—' ) . '</td></tr>';
+            }
+        }
         foreach ( $fields as $key => $field ) {
             if ( 'file' === $field['type'] ) { continue; }
             $value = get_post_meta( $post->ID, '_reunion_' . $key, true );
@@ -642,15 +658,15 @@ class Reunion_Reg_Admin_Entry_Metabox {
             $approve_url = wp_nonce_url( admin_url( 'admin-post.php?action=reunion_reg_approve&post_id=' . $post->ID ), REUNION_REG_ADMIN_ACTION_NONCE . '_' . $post->ID );
             $reject_url = wp_nonce_url( admin_url( 'admin-post.php?action=reunion_reg_reject&post_id=' . $post->ID ), REUNION_REG_ADMIN_ACTION_NONCE . '_' . $post->ID );
             echo '<p>';
-            echo '<a href="' . esc_url( $approve_url ) . '" class="button button-primary" style="margin-right:8px;" onclick="return confirm(\'Approve this registration? An email will be sent to the applicant.\');">Approve</a>';
-            echo '<a href="' . esc_url( $reject_url ) . '" class="button" onclick="return confirm(\'Reject this registration? An email will be sent to the applicant.\');">Reject</a>';
+            echo '<a href="' . esc_url( $approve_url ) . '" class="button button-primary" style="margin-right:8px;" onclick="return confirm(\'Approve this registration? An SMS will be sent to the applicant.\');">Approve</a>';
+            echo '<a href="' . esc_url( $reject_url ) . '" class="button" onclick="return confirm(\'Reject this registration?\');">Reject</a>';
             echo '</p>';
         } else {
             $other_status = $status === 'approved' ? 'reject' : 'approve';
             $other_label  = $status === 'approved' ? 'Reject Instead' : 'Approve Instead';
             $other_url    = wp_nonce_url( admin_url( 'admin-post.php?action=reunion_reg_' . $other_status . '&post_id=' . $post->ID . '&override=1' ), REUNION_REG_ADMIN_ACTION_NONCE . '_' . $post->ID );
             echo '<p style="color:#666;"><em>This entry has been ' . esc_html( strtolower( Reunion_Reg_Fields_Schema::get_statuses()[ $status ] ) ) . '.</em></p>';
-            echo '<p><a href="' . esc_url( $other_url ) . '" class="button" onclick="return confirm(\'Change status to ' . esc_js( $other_status ) . 'd? This will send a notification email to the applicant.\');">' . esc_html( $other_label ) . ' (Override)</a></p>';
+            echo '<p><a href="' . esc_url( $other_url ) . '" class="button" onclick="return confirm(\'Change status to ' . esc_js( $other_status ) . 'd?\');">' . esc_html( $other_label ) . ' (Override)</a></p>';
         }
     }
 }

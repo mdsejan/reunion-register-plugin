@@ -44,6 +44,15 @@ class Reunion_Reg_Frontend_Form {
     public function render_form() {
         $fields           = Reunion_Reg_Fields_Schema::get_fields();
         $sticky           = $this->get_sticky_values();
+
+        // When English-only names are required, relabel and re-placeholder just the
+        // public Name field. Done here (not in the shared schema) so the admin
+        // manual-entry / edit forms keep their plain "নাম" label.
+        if ( Reunion_Reg_Fields_Schema::require_english_name() && isset( $fields['full_name'] ) ) {
+            $fields['full_name']['label']       = 'নাম (ইংরেজিতে)';
+            $fields['full_name']['placeholder'] = 'Enter name in English';
+        }
+
         $values           = $this->get_current_form_values( $fields, $sticky );
         $payment_settings = Reunion_Reg_Fields_Schema::get_payment_settings();
 
@@ -96,6 +105,7 @@ class Reunion_Reg_Frontend_Form {
             'invalid_file'    => array( 'error', 'ছবি/রসিদের ফরম্যাট সঠিক নয়। অনুগ্রহ করে JPG, PNG বা WebP ফাইল আপলোড করুন।' ),
             'file_too_large'  => array( 'error', 'ছবি/রসিদ অনেক বড়। সর্বোচ্চ ২ MB পর্যন্ত অনুমোদিত। অনুগ্রহ করে ছোট/কম্প্রেস করা ছবি ব্যবহার করুন।' ),
             'recaptcha_failed' => array( 'error', 'নিরাপত্তা যাচাই ব্যর্থ হয়েছে। অনুগ্রহ করে পেজটি রিফ্রেশ করে আবার চেষ্টা করুন।' ),
+            'invalid_name'    => array( 'error', 'নাম শুধুমাত্র ইংরেজিতে লিখুন (English letters only)' ),
             'error'           => array( 'error', 'দুঃখিত, কিছু একটা সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।' ),
         );
 
@@ -338,10 +348,14 @@ class Reunion_Reg_Frontend_Form {
                     id="reunion_<?php echo esc_attr( $key ); ?>"
                     value="<?php echo esc_attr( $current_value ); ?>"
                     placeholder="<?php echo esc_attr( $field['placeholder'] ?? '' ); ?>"
+                    <?php if ( ! empty( $field['pattern'] ) ) : ?>pattern="<?php echo esc_attr( $field['pattern'] ); ?>" title="<?php echo esc_attr( $field['pattern_error'] ?? '' ); ?>"<?php endif; ?>
                     <?php if ( isset( $field['min'] ) ) : ?>min="<?php echo esc_attr( $field['min'] ); ?>"<?php endif; ?>
                     <?php if ( isset( $field['max'] ) ) : ?>max="<?php echo esc_attr( $field['max'] ); ?>"<?php endif; ?>
                     <?php echo $required_attr; ?><?php echo $conditional_required_attr; /* phpcs:ignore WordPress.Security.EscapeOutput -- built from esc_attr() pieces above */ ?>
                 >
+                <?php if ( ! empty( $field['pattern'] ) ) : ?>
+                    <p class="reunion-field-inline-error" id="reunion_<?php echo esc_attr( $key ); ?>_error" hidden role="alert"></p>
+                <?php endif; ?>
             <?php endif; ?>
 
             <?php if ( ! empty( $field['note'] ) ) : ?>
